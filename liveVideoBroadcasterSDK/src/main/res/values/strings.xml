@@ -1,0 +1,22 @@
+<resources>
+    <string name="app_name">LiveVideoPublishSDK</string>
+    <string name="live_indicator">On Air</string>
+    <string name="nocamera">No camera exists in your device</string>
+    <string name="camera_not_running_properly">Camera is not running properly</string>
+    <string name="restart">Restart</string>
+    <string name="streaming_not_finished">Your previous broadcast still sends packets due to slow internet speed</string>
+    <string name="oopps_shouldnt_happen">Oopps this shouldn\'t be happened. Please let the library developer this status</string>
+    <string name="broadcast_connection_lost">Connection to media server is lost</string>
+    <string name="low_bandwidth">Network speed is low. Latency is increasing.</string>
+    <string name="not_eligible_for_broadcast">Your device is not eligible to broadcast. There is no hardware encoder.</string>
+    <string name="no_network_connectivity">You\'re not connected to any network. Please connect to Internet</string>
+    <string name="stop_broadcasting">Stop</string>
+    <string name="permission_is_required">Camera and Microphone permission is required to run this app</string>
+    <string name="permission">Permission</string>
+    <string name="app_doesnot_work_without_permissions">App does not work without permissions. Please give Camera and Record Audio permission on app settings</string>
+    <string name="first_call_open_camera">First call openCamera function</string>
+    <string name="only_one_camera_exists">Only one camera exists in this device</string>
+    <string name="camera_permission_is_required">Camera permission is required to run this app</string>
+    <string name="microphone_permission_is_required">Microphone permission is required to run this app</string>
+
+</resources>

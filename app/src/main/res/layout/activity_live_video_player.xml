@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright (C) 2016 The Android Open Source Project
+
+     Licensed under the Apache License, Version 2.0 (the "License");
+     you may not use this file except in compliance with the License.
+     You may obtain a copy of the License at
+
+          http://www.apache.org/licenses/LICENSE-2.0
+
+     Unless required by applicable law or agreed to in writing, software
+     distributed under the License is distributed on an "AS IS" BASIS,
+     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     See the License for the specific language governing permissions and
+     limitations under the License.
+-->
+<android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:keepScreenOn="true">
+
+  <com.google.android.exoplayer2.ui.SimpleExoPlayerView android:id="@+id/player_view"
+      android:layout_width="match_parent"
+      android:layout_height="match_parent"/>
+
+  <LinearLayout
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:background="#88000000"
+      android:orientation="vertical">
+
+    <TextView
+        android:id="@+id/debug_text_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingLeft="4dp"
+        android:paddingRight="4dp"
+        android:textSize="10sp"
+        tools:ignore="SmallSp" />
+
+    <LinearLayout
+        android:id="@+id/controls_root"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:visibility="gone">
+
+      <Button
+          android:id="@+id/retry_button"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:text="@string/retry"
+          android:visibility="gone" />
+
+    </LinearLayout>
+
+
+
+  </LinearLayout>
+
+  <LinearLayout
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_gravity="bottom"
+      android:orientation="vertical"
+      android:padding="24dp"
+      android:id="@+id/video_start_control_layout"
+      android:visibility="visible">
+
+    <EditText
+        android:id="@+id/video_name_edit_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="stream name (add live=1 if it is live e.g. test live=1)"
+        android:textAppearance="?android:textAppearanceMedium" />
+
+    <Button
+        android:id="@+id/play_live_video"
+        style="@style/Base.Widget.AppCompat.Button.Colored"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:onClick="play"
+        android:text="@string/exo_controls_play_description"
+        android:textColor="@android:color/white"
+        android:textAppearance="?android:textAppearanceMedium"
+    />
+  </LinearLayout>
+
+</android.support.design.widget.CoordinatorLayout>

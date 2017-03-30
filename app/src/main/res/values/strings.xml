@@ -1,0 +1,61 @@
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+    <string name="app_name">Live Video Broadcaster & Player</string>
+    <string name="live_indicator">on-air</string>
+    <string name="start_broadcasting">Start Broadcasting</string>
+    <string name="stream_name">Stream Name</string>
+    <string name="nocamera">No camera exists in your device</string>
+    <string name="camera_not_running_properly">Camera is not running properly</string>
+    <string name="restart">Restart</string>
+    <string name="streaming_not_finished">Your previous broadcast still sends packets due to slow internet speed</string>
+    <string name="oopps_shouldnt_happen">Oopps this shouldn\'t be happened. Please let the library developer this status</string>
+    <string name="broadcast_connection_lost">Connection to media server is lost</string>
+    <string name="low_bandwidth">Network speed is low. Latency is increasing.</string>
+    <string name="not_eligible_for_broadcast">Your device is not eligible to broadcast. There is no hardware encoder.</string>
+    <string name="no_network_connectivity">You\'re not connected to any network. Please connect to Internet</string>
+    <string name="stop_broadcasting">Stop</string>
+    <string name="camera_permission_is_required">Camera permission is required to run this app</string>
+    <string name="microphone_permission_is_required">Microphone permission is required to run this app</string>
+    <string name="permission">Permission</string>
+    <string name="app_doesnot_work_without_permissions">App does not work without permissions. Please give Camera and Record Audio permission on app settings</string>
+
+
+    <string name="video">Video</string>
+
+    <string name="audio">Audio</string>
+
+    <string name="text">Text</string>
+
+    <string name="retry">Retry</string>
+
+    <string name="selection_disabled">Disabled</string>
+
+    <string name="selection_default">Default</string>
+
+    <string name="selection_default_none">Default (none)</string>
+
+    <string name="unexpected_intent_action">Unexpected intent action: <xliff:g id="action">%1$s</xliff:g></string>
+
+    <string name="enable_random_adaptation">Enable random adaptation</string>
+
+    <string name="error_drm_not_supported">Protected content not supported on API levels below 18</string>
+
+    <string name="error_drm_unsupported_scheme">This device does not support the required DRM scheme</string>
+
+    <string name="error_drm_unknown">An unknown DRM error occurred</string>
+
+    <string name="error_no_decoder">This device does not provide a decoder for <xliff:g id="mime_type">%1$s</xliff:g></string>
+
+    <string name="error_no_secure_decoder">This device does not provide a secure decoder for <xliff:g id="mime_type">%1$s</xliff:g></string>
+
+    <string name="error_querying_decoders">Unable to query device decoders</string>
+
+    <string name="error_instantiating_decoder">Unable to instantiate decoder <xliff:g id="decoder_name">%1$s</xliff:g></string>
+
+    <string name="error_unsupported_video">Media includes video tracks, but none are playable by this device</string>
+
+    <string name="error_unsupported_audio">Media includes audio tracks, but none are playable by this device</string>
+
+    <string name="storage_permission_denied">Permission to access storage was denied</string>
+
+    <string name="sample_list_load_error">One or more sample lists failed to load</string>
+</resources>
