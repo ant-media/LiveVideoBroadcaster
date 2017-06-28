@@ -25,8 +25,6 @@ import io.antmedia.android.broadcaster.network.IMediaMuxer;
 public class RTMPStreamer extends Handler implements IMediaMuxer  {
 
 
-
-
     private static final boolean DEBUG = false;
     private static final String TAG = RTMPStreamer.class.getSimpleName();
     RTMPMuxer rtmpMuxer = new RTMPMuxer();
@@ -94,9 +92,8 @@ public class RTMPStreamer extends Handler implements IMediaMuxer  {
             //    file_open("/mnt/sdcard/stream.flv" + (int) Math.random() * 1000);
             //    writeFLVHeader(true, true);
             isConnected = true;
-            return true;
         }
-        return false;
+        return isConnected;
     }
 
     public void close() {
@@ -210,6 +207,11 @@ public class RTMPStreamer extends Handler implements IMediaMuxer  {
                     }
                     if (isConnected) {
                         int result = rtmpMuxer.writeAudio(audioFrame.data, 0, audioFrame.length, audioFrame.timestamp);
+
+                        if (DEBUG) {
+                            Log.d(TAG, "send audio result: " + result + " time:" + audioFrame.timestamp + " length:" + audioFrame.length);
+                        }
+
                         if (result < 0) {
                             close();
                         }
@@ -244,6 +246,9 @@ public class RTMPStreamer extends Handler implements IMediaMuxer  {
                     }
                     if (isConnected) {
                         int result = rtmpMuxer.writeVideo(frame.data, 0, frame.length, frame.timestamp);
+                        if (DEBUG) {
+                            Log.d(TAG, "send video result: " + result + " time:" + frame.timestamp + " length:" + frame.length);
+                        }
                         if (result < 0) {
                             close();
                         }
