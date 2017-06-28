@@ -40,9 +40,12 @@ public class RtmpDataSource implements DataSource {
     public long open(DataSpec dataSpec) throws IOException {
         //first try vod
         String uriString = dataSpec.uri.toString();
-        int result = rtmpClient.open(uriString, false);
-        uri = dataSpec.uri;
-        if (result < 0) {
+        try {
+            rtmpClient.open(uriString, false);
+            uri = dataSpec.uri;
+        }
+        catch (Exception e) {
+            e.printStackTrace();
             return 0;
         }
 
