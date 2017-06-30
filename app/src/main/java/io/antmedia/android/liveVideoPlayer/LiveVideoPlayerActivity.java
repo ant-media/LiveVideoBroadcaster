@@ -68,6 +68,7 @@ import com.google.android.exoplayer2.ui.DebugTextViewHelper;
 import com.google.android.exoplayer2.ui.PlaybackControlView;
 import com.google.android.exoplayer2.ui.SimpleExoPlayerView;
 import com.google.android.exoplayer2.upstream.DataSource;
+import com.google.android.exoplayer2.upstream.DefaultAllocator;
 import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter;
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSourceFactory;
@@ -231,6 +232,9 @@ public class LiveVideoPlayerActivity extends AppCompatActivity implements OnClic
       trackSelector = new DefaultTrackSelector(videoTrackSelectionFactory);
       player = ExoPlayerFactory.newSimpleInstance(this, trackSelector, new DefaultLoadControl(),
               null, extensionRendererMode);
+   //   player = ExoPlayerFactory.newSimpleInstance(this, trackSelector,
+   //           new DefaultLoadControl(new DefaultAllocator(true, C.DEFAULT_BUFFER_SEGMENT_SIZE),  500, 1500, 500, 1500),
+   //           null, extensionRendererMode);
       player.addListener(this);
 
       eventLogger = new EventLogger(trackSelector);
@@ -471,8 +475,9 @@ public class LiveVideoPlayerActivity extends AppCompatActivity implements OnClic
   }
 
   public void play(View view) {
-    String rtmpURL = RTMP_BASE_URL + videoNameEditText.getText().toString();
-    initializePlayer(rtmpURL);
+    String URL = RTMP_BASE_URL + videoNameEditText.getText().toString();
+    //String URL = "http://192.168.1.34:5080/vod/streams/test_adaptive.m3u8";
+    initializePlayer(URL);
     videoStartControlLayout.setVisibility(View.GONE);
   }
 }
