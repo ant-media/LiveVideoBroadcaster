@@ -32,6 +32,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import io.antmedia.android.R;
 import io.antmedia.android.broadcaster.encoder.AudioHandler;
@@ -75,6 +77,8 @@ public class LiveVideoBroadcaster extends Service implements ILiveVideoBroadcast
     private HandlerThread mRtmpHandlerThread;
     private HandlerThread audioHandlerThread;
     private ConnectivityManager connectivityManager;
+    private boolean adaptiveStreamingEnabled = false;
+    private Timer adaptiveStreamingTimer = null;
 
     public boolean isConnected() {
         if (mRtmpStreamer != null) {
@@ -154,26 +158,31 @@ public class LiveVideoBroadcaster extends Service implements ILiveVideoBroadcast
     }
 
     public void init(Activity activity, GLSurfaceView glView) {
-        audioHandlerThread = new HandlerThread("AudioHandlerThread", Process.THREAD_PRIORITY_AUDIO);
-        audioHandlerThread.start();
-        audioHandler = new AudioHandler(audioHandlerThread.getLooper());
-        mCameraHandler = new CameraHandler(this);
-        this.context = activity;
+        try {
+            audioHandlerThread = new HandlerThread("AudioHandlerThread", Process.THREAD_PRIORITY_AUDIO);
+            audioHandlerThread.start();
+            audioHandler = new AudioHandler(audioHandlerThread.getLooper());
+            mCameraHandler = new CameraHandler(this);
+            this.context = activity;
 
-        // Define a handler that receives camera-control messages from other threads.  All calls
-        // to Camera must be made on the same thread.  Note we create this before the renderer
-        // thread, so we know the fully-constructed object will be visible.
-        mRenderer = new CameraSurfaceRenderer(mCameraHandler, sVideoEncoder);
-        mGLView = glView;
-        mGLView.setRenderer(mRenderer);
-        mGLView.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
+            // Define a handler that receives camera-control messages from other threads.  All calls
+            // to Camera must be made on the same thread.  Note we create this before the renderer
+            // thread, so we know the fully-constructed object will be visible.
+            mRenderer = new CameraSurfaceRenderer(mCameraHandler, sVideoEncoder);
+            mGLView = glView;
+            mGLView.setRenderer(mRenderer);
+            mGLView.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
 
-        mRtmpHandlerThread = new HandlerThread("RtmpStreamerThread"); //, Process.THREAD_PRIORITY_BACKGROUND);
-        mRtmpHandlerThread.start();
-        mRtmpStreamer = new RTMPStreamer(mRtmpHandlerThread.getLooper());
+            mRtmpHandlerThread = new HandlerThread("RtmpStreamerThread"); //, Process.THREAD_PRIORITY_BACKGROUND);
+            mRtmpHandlerThread.start();
+            mRtmpStreamer = new RTMPStreamer(mRtmpHandlerThread.getLooper());
 
-        connectivityManager = (ConnectivityManager) this.getSystemService(
-                Context.CONNECTIVITY_SERVICE);
+            connectivityManager = (ConnectivityManager) this.getSystemService(
+                    Context.CONNECTIVITY_SERVICE);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public boolean hasConnection() {
@@ -231,6 +240,83 @@ public class LiveVideoBroadcaster extends Service implements ILiveVideoBroadcast
                 audioThread = new AudioRecorderThread(SAMPLE_AUDIO_RATE_IN_HZ, recordStartTime, audioHandler);
                 audioThread.start();
                 isRecording = true;
+
+                if (adaptiveStreamingEnabled) {
+                    adaptiveStreamingTimer = new Timer();
+                    adaptiveStreamingTimer.schedule(new TimerTask() {
+                        public int previousFrameCount;
+                        public int frameQueueIncreased;
+                        @Override
+                        public void run() {
+
+
+                            int frameCountInQueue = mRtmpStreamer.getVideoFrameCountInQueue();
+                            System.out.println("video frameCountInQueue : " + frameCountInQueue);
+                            if (frameCountInQueue > previousFrameCount) {
+                                frameQueueIncreased++;
+                            }
+                            else {
+                                frameQueueIncreased--;
+                            }
+                            previousFrameCount = frameCountInQueue;
+
+                            if (frameQueueIncreased > 10) {
+                                //decrease bitrate
+                                System.out.println("decrease bitrate");
+                                mGLView.queueEvent(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        int frameRate = mRenderer.getFrameRate();
+                                        if (frameRate >= 13) {
+                                            frameRate -= 3;
+                                            mRenderer.setFrameRate(frameRate);
+                                        }
+                                        else {
+                                            int bitrate = mRenderer.getBitrate();
+                                            if (bitrate > 200000) { //200kbit
+                                                bitrate -= 100000;
+                                                mRenderer.setBitrate(bitrate);
+                                                // notify the renderer that we want to change the encoder's state
+                                                mRenderer.recorderConfigChanged();
+                                            }
+                                        }
+                                    }
+                                });
+                                frameQueueIncreased = 0;
+
+                            }
+
+                            if (frameQueueIncreased < -10) {
+                                //increase bitrate
+                                System.out.println("//increase bitrate");
+                                mGLView.queueEvent(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        int frameRate = mRenderer.getFrameRate();
+                                        if (frameRate <= 27) {
+                                            frameRate += 3;
+                                            mRenderer.setFrameRate(frameRate);
+                                        }
+                                        else {
+                                            int bitrate = mRenderer.getBitrate();
+                                            if (bitrate < 2000000) { //2Mbit
+                                                bitrate += 100000;
+                                                mRenderer.setBitrate(bitrate);
+                                                // notify the renderer that we want to change the encoder's state
+                                                mRenderer.recorderConfigChanged();
+                                            }
+                                        }
+                                    }
+                                });
+
+                                frameQueueIncreased = 0;
+                            }
+
+
+
+                        }
+                    }, 0, 500);
+                }
             }
 
         }
@@ -239,6 +325,7 @@ public class LiveVideoBroadcaster extends Service implements ILiveVideoBroadcast
         }
         return isRecording;
     }
+
 
     public void stopBroadcasting() {
         if (isRecording) {
@@ -250,6 +337,11 @@ public class LiveVideoBroadcaster extends Service implements ILiveVideoBroadcast
                     mRenderer.stopRecording();
                 }
             });
+            if (adaptiveStreamingTimer != null) {
+                adaptiveStreamingTimer.cancel();
+                adaptiveStreamingTimer = null;
+            }
+
             if (audioThread != null) {
                 audioThread.stopAudioRecording();
             }
@@ -372,7 +464,7 @@ public class LiveVideoBroadcaster extends Service implements ILiveVideoBroadcast
 
                             if (Utils.doesEncoderWorks(context) == Utils.ENCODER_NOT_TESTED)
                             {
-                                boolean encoderWorks = VideoEncoderCore.doesEncoderWork(previewSize.width, previewSize.height, 300000);
+                                boolean encoderWorks = VideoEncoderCore.doesEncoderWork(previewSize.width, previewSize.height, 300000, 20);
                                 Utils.setEncoderWorks(context, encoderWorks);
                             }
                         }
@@ -428,6 +520,11 @@ public class LiveVideoBroadcaster extends Service implements ILiveVideoBroadcast
         }
     }
 
+
+    @Override
+    public void setAdaptiveStreaming(boolean enable) {
+        this.adaptiveStreamingEnabled = enable;
+    }
 
     private int setCameraParameters(Camera.Parameters parameters) {
 

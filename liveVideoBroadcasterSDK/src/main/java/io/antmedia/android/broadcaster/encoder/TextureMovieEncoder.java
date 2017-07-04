@@ -88,6 +88,7 @@ public class TextureMovieEncoder implements Runnable {
     private long mRecordingStartTime;
     private long mLastFrameTime = 0;
     private Texture2dProgram.ProgramType mProgramType;
+    private EncoderConfig mEncoderConfig;
 
     /**
      * Encoder configuration.
@@ -106,8 +107,9 @@ public class TextureMovieEncoder implements Runnable {
         final EGLContext mEglContext;
         final IMediaMuxer writerHandler;
         final Texture2dProgram.ProgramType mProgramType;
+        public int mFrameRate;
 
-        public EncoderConfig(IMediaMuxer handler, int width, int height, int bitRate,
+        public EncoderConfig(IMediaMuxer handler, int width, int height, int bitRate, int frameRate,
                              EGLContext sharedEglContext, Texture2dProgram.ProgramType programType) {
             writerHandler = handler;
             mWidth = width;
@@ -115,6 +117,7 @@ public class TextureMovieEncoder implements Runnable {
             mBitRate = bitRate;
             mEglContext = sharedEglContext;
             mProgramType = programType;
+            mFrameRate = frameRate;
         }
 
     }
@@ -127,12 +130,12 @@ public class TextureMovieEncoder implements Runnable {
      * Returns after the recorder thread has started and is ready to accept Messages.  The
      * encoder may not yet be fully configured.
      */
-    public void startRecording(EncoderConfig config, long mRecordingStartTime) {
+    public boolean startRecording(EncoderConfig config, long mRecordingStartTime) {
         Log.d(TAG, "Encoder: startRecording()");
         synchronized (mReadyFence) {
             if (mRunning) {
                 Log.w(TAG, "Encoder thread already running");
-                return;
+                return false;
             }
             this.mRecordingStartTime = mRecordingStartTime;
             mRunning = true;
@@ -147,10 +150,15 @@ public class TextureMovieEncoder implements Runnable {
         }
 
         mHandler.sendMessage(mHandler.obtainMessage(MSG_START_RECORDING, config));
+        return true;
     }
 
+
     public void releaseRecording() {
-        mHandler.sendMessage(mHandler.obtainMessage(MSG_RELEASE_RECORDING));
+        if (mHandler != null) {
+            mHandler.sendMessage(mHandler.obtainMessage(MSG_RELEASE_RECORDING));
+            mHandler.sendMessage(mHandler.obtainMessage(MSG_QUIT));
+        }
     }
 
     /**
@@ -207,6 +215,10 @@ public class TextureMovieEncoder implements Runnable {
             }
         }
 
+        if (mHandler == null) {
+            return;
+        }
+
         float[] transform = new float[16];      // TODO - avoid alloc every frame
         st.getTransformMatrix(transform);
         /*
@@ -223,9 +235,9 @@ public class TextureMovieEncoder implements Runnable {
         */
 
         long frameTime = System.currentTimeMillis();
-        if ((frameTime - mLastFrameTime) >= 50)
+        if (mVideoEncoder != null && (frameTime - mLastFrameTime) >= getFrameInterval())
         {
-
+            System.out.println(" get frame interval :" + getFrameInterval());
             // encode data at least in every 50 milliseconds, it measn 20fps or less
             long timestamp = (frameTime - mRecordingStartTime)
                     * 1000000; // convert it to nano seconds
@@ -233,6 +245,20 @@ public class TextureMovieEncoder implements Runnable {
             mHandler.sendMessage(mHandler.obtainMessage(MSG_FRAME_AVAILABLE,
                     (int) (timestamp >> 32), (int) timestamp, transform));
         }
+    }
+
+    private long getFrameInterval() {
+        return 1000 / mEncoderConfig.mFrameRate;
+    }
+
+    public void setFrameRate(int framerate) {
+        if (mEncoderConfig != null) {
+            mEncoderConfig.mFrameRate = framerate;
+        }
+    }
+
+    public int getFrameRate() {
+        return mEncoderConfig != null ? mEncoderConfig.mFrameRate : 0;
     }
 
     /**
@@ -356,8 +382,9 @@ public class TextureMovieEncoder implements Runnable {
      */
     private void handleStartRecording(EncoderConfig config) {
         Log.d(TAG, "handleStartRecording " + config);
+        this.mEncoderConfig = config;
         mFrameNum = 0;
-        prepareEncoder(config.mEglContext, config.mWidth, config.mHeight, config.mBitRate,
+        prepareEncoder(config.mEglContext, config.mWidth, config.mHeight, config.mBitRate, config.mFrameRate,
                 config.writerHandler, config.mProgramType);
     }
 
@@ -372,13 +399,15 @@ public class TextureMovieEncoder implements Runnable {
      */
     private void handleFrameAvailable(float[] transform, long timestampNanos) {
         if (VERBOSE) Log.d(TAG, "handleFrameAvailable tr=" + transform);
-        mVideoEncoder.drainEncoder(false);
-        mFullScreen.drawFrame(mTextureId, transform);
+        if (mFullScreen != null) {
+            mVideoEncoder.drainEncoder(false);
+            mFullScreen.drawFrame(mTextureId, transform);
 
-        //   drawBox(mFrameNum++);
+            //   drawBox(mFrameNum++);
 
-        mInputWindowSurface.setPresentationTime(timestampNanos);
-        mInputWindowSurface.swapBuffers();
+            mInputWindowSurface.setPresentationTime(timestampNanos);
+            mInputWindowSurface.swapBuffers();
+        }
     }
 
     /**
@@ -426,12 +455,13 @@ public class TextureMovieEncoder implements Runnable {
                 new Texture2dProgram(mProgramType));
     }
 
-    private void prepareEncoder(EGLContext sharedContext, int width, int height, int bitRate,
+    private void prepareEncoder(EGLContext sharedContext, int width, int height, int bitRate, int frameRate,
                                 IMediaMuxer writerHandle, Texture2dProgram.ProgramType programType)
-    throws IllegalStateException
+            throws IllegalStateException
     {
         try {
-            mVideoEncoder = new VideoEncoderCore(width, height, bitRate, writerHandle);
+            mVideoEncoder = new VideoEncoderCore(width, height, bitRate, frameRate, writerHandle);
+
         } catch (IOException ioe) {
             throw new RuntimeException(ioe);
         }

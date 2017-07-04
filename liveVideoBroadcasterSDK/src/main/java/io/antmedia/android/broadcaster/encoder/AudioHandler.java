@@ -3,6 +3,7 @@ package io.antmedia.android.broadcaster.encoder;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
+import android.util.Log;
 
 import io.antmedia.android.broadcaster.encoder.AudioEncoder;
 import io.antmedia.android.broadcaster.network.IMediaMuxer;
@@ -50,7 +51,7 @@ public class AudioHandler extends Handler {
         switch (msg.what) {
             case END_OF_STREAM:
                 if (audioEncoder.getState() == Thread.State.RUNNABLE) {
-                    System.out.println("stop encoding...");
+                    Log.d("audio handler", "stop audio encoding...");
                     audioEncoder.stopEncoding();
                     removeMessages(RECORD_AUDIO);
                 }

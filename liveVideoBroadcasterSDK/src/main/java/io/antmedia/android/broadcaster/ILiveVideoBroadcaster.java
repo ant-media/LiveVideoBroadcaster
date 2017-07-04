@@ -51,11 +51,20 @@ public interface ILiveVideoBroadcaster {
      */
     void changeCamera();
 
+
+    /**
+     * Set adaptive streaming enable or disable
+     *
+     * @param enable, if true , adaptive streaming is enabled, defaults false
+     */
+    void setAdaptiveStreaming(boolean enable);
+
     /**
      * Set the resolution of the active camera
      * @param size
      */
     void setResolution(Resolution size);
+
 
     /**
      * @return the supported preview sizes of the active camera

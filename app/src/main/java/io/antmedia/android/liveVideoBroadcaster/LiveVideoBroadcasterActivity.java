@@ -67,6 +67,7 @@ public class LiveVideoBroadcasterActivity extends AppCompatActivity {
             LiveVideoBroadcaster.LocalBinder binder = (LiveVideoBroadcaster.LocalBinder) service;
             mLiveVideoBroadcaster = binder.getService();
             mLiveVideoBroadcaster.init(LiveVideoBroadcasterActivity.this, mGLView);
+            mLiveVideoBroadcaster.setAdaptiveStreaming(true);
             mLiveVideoBroadcaster.openCamera(Camera.CameraInfo.CAMERA_FACING_FRONT);
         }
         @Override

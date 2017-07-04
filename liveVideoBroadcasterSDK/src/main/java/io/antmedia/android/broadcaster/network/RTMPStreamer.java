@@ -111,24 +111,28 @@ public class RTMPStreamer extends Handler implements IMediaMuxer  {
     @Override
     public void handleMessage(Message msg) {
         switch (msg.what) {
-            case SEND_AUDIO:
+            case SEND_AUDIO: {
                 /**
                  * msg.obj aac data,
                  * msg.arg1 length of the data
                  * msg.arg2 timestamp
                  */
 
-                if  (msg.arg2 >= mLastReceivedAudioFrameTimeStamp) {
+                if (msg.arg2 >= mLastReceivedAudioFrameTimeStamp) {
                     //some initial frames(decoder params) may be equal to previos ones
                     // add packet if the new frame timestamp is bigger than the last frame
                     // otherwise discard the packet. If we don't discard it, rtmp connection totally drops
                     mLastReceivedAudioFrameTimeStamp = msg.arg2;
                     audioFrameList.add(new Frame((byte[]) msg.obj, msg.arg1, msg.arg2));
                 }
-
+                else {
+                    Log.w(TAG, "discarding audio packet because time stamp is older than last packet");
+                }
                 sendFrames();
-                break;
-            case SEND_VIDEO:
+            }
+            break;
+            case SEND_VIDEO: {
+
                 /**
                  * msg.obj h264 nal unit,
                  * msg.arg1 length of the data
@@ -141,9 +145,13 @@ public class RTMPStreamer extends Handler implements IMediaMuxer  {
                     mLastReceivedVideoFrameTimeStamp = msg.arg2;
                     videoFrameList.add(new Frame((byte[]) msg.obj, msg.arg1, msg.arg2));
                 }
+                else {
 
+                    Log.w(TAG, "discarding videp packet because time stamp is older than last packet");
+                }
                 sendFrames();
-                break;
+            }
+            break;
             case STOP_STREAMING:
                 finishframes();
                 close();
@@ -329,6 +337,12 @@ public class RTMPStreamer extends Handler implements IMediaMuxer  {
     public int getFrameCountInQueue() {
         synchronized (frameSynchronized) {
             return frameCount;
+        }
+    }
+
+    public int getVideoFrameCountInQueue() {
+        synchronized (frameSynchronized) {
+            return videoFrameList.size();
         }
     }
 }

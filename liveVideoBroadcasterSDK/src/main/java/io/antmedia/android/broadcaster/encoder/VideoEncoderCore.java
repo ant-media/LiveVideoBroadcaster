@@ -45,8 +45,8 @@ public class VideoEncoderCore {
 
     // TODO: these ought to be configurable as well
     private static final String MIME_TYPE = "video/avc";    // H.264 Advanced Video Coding
-    private static final int FRAME_RATE = 20;               // 20fps
-    private static final int IFRAME_INTERVAL = 3;           // 3 seconds between I-frames
+    //private int frameRate = 20;               // 20fps
+    private static final int IFRAME_INTERVAL = 2;           // 2 seconds between I-frames
     private IMediaMuxer mWriterHandler;
 
     private Surface mInputSurface;
@@ -59,19 +59,22 @@ public class VideoEncoderCore {
     /**
      * Configures encoder and muxer state, and prepares the input Surface.
      */
-    public VideoEncoderCore(int width, int height, int bitRate, IMediaMuxer writerHandler)
+    public VideoEncoderCore(int width, int height, int bitRate, int frameRate, IMediaMuxer writerHandler)
             throws IOException {
         mBufferInfo = new MediaCodec.BufferInfo();
 
         MediaFormat format = MediaFormat.createVideoFormat(MIME_TYPE, width, height);
+
+       // this.frameRate = frameRate;
 
         // Set some properties.  Failing to specify some of these can cause the MediaCodec
         // configure() call to throw an unhelpful exception.
         format.setInteger(MediaFormat.KEY_COLOR_FORMAT,
                 MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);
         format.setInteger(MediaFormat.KEY_BIT_RATE, bitRate);
-        format.setInteger(MediaFormat.KEY_FRAME_RATE, FRAME_RATE);
+        format.setInteger(MediaFormat.KEY_FRAME_RATE, frameRate);
         format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, IFRAME_INTERVAL);
+
         if (VERBOSE) Log.d(TAG, "format: " + format);
 
         // Create a MediaCodec encoder, and configure it with our format.  Get a Surface
@@ -86,7 +89,7 @@ public class VideoEncoderCore {
     }
 
 
-    public static boolean doesEncoderWork(int width, int height, int bitRate) {
+    public static boolean doesEncoderWork(int width, int height, int bitRate, int frameRate) {
 
         boolean success = false;
         MediaFormat format = MediaFormat.createVideoFormat(MIME_TYPE, width, height);
@@ -96,7 +99,7 @@ public class VideoEncoderCore {
         format.setInteger(MediaFormat.KEY_COLOR_FORMAT,
                 MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);
         format.setInteger(MediaFormat.KEY_BIT_RATE, bitRate);
-        format.setInteger(MediaFormat.KEY_FRAME_RATE, FRAME_RATE);
+        format.setInteger(MediaFormat.KEY_FRAME_RATE, frameRate);
         format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, IFRAME_INTERVAL);
         if (VERBOSE) Log.d(TAG, "format: " + format);
 
@@ -151,6 +154,9 @@ public class VideoEncoderCore {
      * not recording audio.
      */
     public void drainEncoder(boolean endOfStream) {
+        if (mEncoder == null) {
+            return;
+        }
         final int TIMEOUT_USEC = 10000;
         if (VERBOSE) Log.d(TAG, "drainEncoder(" + endOfStream + ")");
 

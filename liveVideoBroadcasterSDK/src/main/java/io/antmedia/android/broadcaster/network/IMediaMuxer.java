@@ -34,4 +34,6 @@ public interface IMediaMuxer {
     void stopMuxer();
 
     int getFrameCountInQueue();
+
+    int getVideoFrameCountInQueue();
 }

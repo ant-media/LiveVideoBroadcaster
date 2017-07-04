@@ -55,6 +55,8 @@ public class CameraSurfaceRenderer implements GLSurfaceView.Renderer {
     private int mIncomingHeight;
     private IMediaMuxer mWriterHandler;
     private long mRecordingStartTime;
+    private int bitrate;
+    private int frameRate = 25;
 
     /**
      * Constructs CameraSurfaceRenderer.
@@ -131,6 +133,28 @@ public class CameraSurfaceRenderer implements GLSurfaceView.Renderer {
         mIncomingWidth = width;
         mIncomingHeight = height;
         mIncomingSizeUpdated = true;
+        if (mIncomingHeight >= 720) {
+            bitrate = 850000;
+        } else if (mIncomingHeight >= 480) {
+            bitrate = 550000;
+        } else if (mIncomingHeight >= 360) {
+            bitrate = 450000;
+        } else if (mIncomingHeight >= 288) {
+            bitrate = 350000;
+        } else if (mIncomingHeight >= 240) {
+            bitrate = 250000;
+        } else //if (mIncomingHeight >= 144)
+        {
+            bitrate = 100000;
+        }
+    }
+
+    public int getBitrate() {
+        return bitrate;
+    }
+
+    public void setBitrate(int bitrate) {
+        this.bitrate = bitrate;
     }
 
     @Override
@@ -166,7 +190,16 @@ public class CameraSurfaceRenderer implements GLSurfaceView.Renderer {
                 CameraHandler.MSG_SET_SURFACE_TEXTURE, mSurfaceTexture));
     }
 
+    public void setFrameRate(int frameRate) {
+        this.frameRate = frameRate;
+        if (mVideoEncoder != null) {
+            mVideoEncoder.setFrameRate(frameRate);
+        }
+    }
 
+    public int getFrameRate() {
+        return mVideoEncoder != null ? mVideoEncoder.getFrameRate() : 0;
+    }
 
     @Override
     public void onSurfaceChanged(GL10 unused, int width, int height) {
@@ -191,28 +224,19 @@ public class CameraSurfaceRenderer implements GLSurfaceView.Renderer {
 
             switch (mRecordingStatus) {
                 case RECORDING_OFF:
-                    Log.d(TAG, "START recording");
+                    Log.d(TAG, "START recording bitrate: "  +bitrate);
                 {
-                    int bitrate; // 500kb
-                    if (mIncomingHeight >= 720) {
-                        bitrate = 850000;
-                    } else if (mIncomingHeight >= 480) {
-                        bitrate = 550000;
-                    } else if (mIncomingHeight >= 360) {
-                        bitrate = 450000;
-                    } else if (mIncomingHeight >= 288) {
-                        bitrate = 350000;
-                    } else if (mIncomingHeight >= 240) {
-                        bitrate = 250000;
-                    } else //if (mIncomingHeight >= 144)
-                    {
-                        bitrate = 100000;
-                    }
+
                     // start recording
-                    mVideoEncoder.startRecording(new TextureMovieEncoder.EncoderConfig(
-                                    mWriterHandler, mIncomingWidth, mIncomingHeight, bitrate, EGL14.eglGetCurrentContext(), mEffectType),
+                   boolean started = mVideoEncoder.startRecording(new TextureMovieEncoder.EncoderConfig(
+                                    mWriterHandler, mIncomingWidth, mIncomingHeight, bitrate, frameRate, EGL14.eglGetCurrentContext(), mEffectType),
                             mRecordingStartTime);
-                    mRecordingStatus = RECORDING_ON;
+                    if (started) {
+                        mRecordingStatus = RECORDING_ON;
+                    }
+                    else {
+                        mRecordingStatus = RECORDING_OFF;
+                    }
                 }
                 break;
                 case RECORDER_CONFIG_CHANGED:
@@ -302,7 +326,7 @@ public class CameraSurfaceRenderer implements GLSurfaceView.Renderer {
     public void recorderConfigChanged() {
         // pay attention to this function, it causes throwing an exception in some circumstance when
         // it is called in recording state
-        //mRecordingStatus = RECORDER_CONFIG_CHANGED;
+        mRecordingStatus = RECORDER_CONFIG_CHANGED;
     }
 
     public List<Texture2dProgram.ProgramType> getEffectList() {
