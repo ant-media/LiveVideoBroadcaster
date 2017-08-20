@@ -118,7 +118,7 @@ public class RTMPStreamer extends Handler implements IMediaMuxer  {
                  * msg.arg2 timestamp
                  */
 
-                if (msg.arg2 >= mLastReceivedAudioFrameTimeStamp) {
+                if ((msg.arg2 >= mLastReceivedAudioFrameTimeStamp) && (msg.arg1 > 0)) {
                     //some initial frames(decoder params) may be equal to previos ones
                     // add packet if the new frame timestamp is bigger than the last frame
                     // otherwise discard the packet. If we don't discard it, rtmp connection totally drops
@@ -126,7 +126,7 @@ public class RTMPStreamer extends Handler implements IMediaMuxer  {
                     audioFrameList.add(new Frame((byte[]) msg.obj, msg.arg1, msg.arg2));
                 }
                 else {
-                    Log.w(TAG, "discarding audio packet because time stamp is older than last packet");
+                    Log.w(TAG, "discarding audio packet because time stamp is older than last packet or data lenth equal to zero");
                 }
                 sendFrames();
             }
@@ -138,7 +138,7 @@ public class RTMPStreamer extends Handler implements IMediaMuxer  {
                  * msg.arg1 length of the data
                  * msg.arg2 timestamp
                  */
-                if (msg.arg2 >= mLastReceivedVideoFrameTimeStamp) {
+                if ((msg.arg2 >= mLastReceivedVideoFrameTimeStamp) && (msg.arg1 > 0)) {
                     //some initial frames(decoder params) may be equal to previous ones
                     // add packet if the new frame timestamp is bigger than the last frame
                     // otherwise discard the packet. If we don't discard it, rtmp connection totally drops
@@ -147,7 +147,7 @@ public class RTMPStreamer extends Handler implements IMediaMuxer  {
                 }
                 else {
 
-                    Log.w(TAG, "discarding videp packet because time stamp is older than last packet");
+                    Log.w(TAG, "discarding videp packet because time stamp is older  than last packet or data lenth equal to zero");
                 }
                 sendFrames();
             }
