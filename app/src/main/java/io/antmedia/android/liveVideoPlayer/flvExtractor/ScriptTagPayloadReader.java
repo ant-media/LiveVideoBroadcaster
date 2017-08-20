@@ -82,14 +82,16 @@ import java.util.Map;
     int type = readAmfType(data);
     if (type != AMF_TYPE_ECMA_ARRAY) {
       // Should never happen.
-      throw new ParserException();
+   //   throw new ParserException();
     }
-    // Set the duration to the value contained in the metadata, if present.
-    Map<String, Object> metadata = readAmfEcmaArray(data);
-    if (metadata.containsKey(KEY_DURATION)) {
-      double durationSeconds = (double) metadata.get(KEY_DURATION);
-      if (durationSeconds > 0.0) {
-        durationUs = (long) (durationSeconds * C.MICROS_PER_SECOND);
+    else {
+      // Set the duration to the value contained in the metadata, if present.
+      Map<String, Object> metadata = readAmfEcmaArray(data);
+      if (metadata.containsKey(KEY_DURATION)) {
+        double durationSeconds = (double) metadata.get(KEY_DURATION);
+        if (durationSeconds > 0.0) {
+          durationUs = (long) (durationSeconds * C.MICROS_PER_SECOND);
+        }
       }
     }
   }
