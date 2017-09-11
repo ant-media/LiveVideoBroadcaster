@@ -65,9 +65,11 @@ public class LiveVideoBroadcasterActivity extends AppCompatActivity {
                                        IBinder service) {
             // We've bound to LocalService, cast the IBinder and get LocalService instance
             LiveVideoBroadcaster.LocalBinder binder = (LiveVideoBroadcaster.LocalBinder) service;
-            mLiveVideoBroadcaster = binder.getService();
-            mLiveVideoBroadcaster.init(LiveVideoBroadcasterActivity.this, mGLView);
-            mLiveVideoBroadcaster.setAdaptiveStreaming(true);
+            if (mLiveVideoBroadcaster == null) {
+                mLiveVideoBroadcaster = binder.getService();
+                mLiveVideoBroadcaster.init(LiveVideoBroadcasterActivity.this, mGLView);
+                mLiveVideoBroadcaster.setAdaptiveStreaming(true);
+            }
             mLiveVideoBroadcaster.openCamera(Camera.CameraInfo.CAMERA_FACING_FRONT);
         }
         @Override
