@@ -10,13 +10,13 @@ Let's make it easy, you can develop a live streaming app in 3 general steps.
 
 First of all, a live stream should be sent to a media server that can distributes the live stream to subscribers in real time so a media server should be running in somewhere like Amazon AWS, Google Cloud, IBM Bluemix or in any other infrastructure.  You may even use your own local computer to first test the app.
 
-Anyway, there are media servers you can purchase licence, fortunately you do not need to pay anything and you can download Red5+ Media Server  at antmedia.io Red5+ Media Server can distribute live stream in RTMP, RTSP and HLS formats. Moreover, it records live streams in MP4 format. It means your live streams and recorded streams can play in both all mobile and desktop browsers.
+Anyway, there are media servers you can purchase licence, fortunately you do not need to pay anything and you can download Ant Media Server Community Edition at antmedia.io. Ant Media Server can distribute live stream in RTMP, RTSP and HLS formats. Moreover, it records live streams in MP4 format. It means your live streams and recorded streams can play in both all mobile and desktop browsers.
 
-After you download Red5+ Media Server, extract it and run the red5.sh (red5.bat on Windows) file in your computer.
+After you download Ant Media Server, extract it and run the start.sh (start.bat on Windows) file in your computer.
 ```
-./red5.sh
+./start.sh
 ```
-When you run this command, Red5+ Media Server starts with printing some logs. At this stage, please learn your computer IP address and save it somewhere. We will use this address later.
+When you run this command, Ant Media Server starts with printing some logs. At this stage, please learn your computer IP address and save it somewhere. We will use this address later.
 
 ### Step 2: Broadcast Live Stream from Your Mobile Device
 
@@ -52,7 +52,7 @@ Right now, you are broadcasting live stream to media server. Any subscriber can 
 
 ### Step 3: Play Live Stream On your Mobile Device
 
-Playing a live stream on your android is not a hard thing to accomplish if your media server supports, RTSP or HLS. Fortunately, Red5+ Media Server supports both of them however, if you want to have low latency in live stream, it would be better to use RTMP so that we have added RTMP play functionality to ExoPlayer, moreover this player is already integrated to our sample. You just need to run LiveVideoBroadcaster app on any other android device.
+Playing a live stream on your android is not a hard thing to accomplish if your media server supports, RTSP or HLS. Fortunately, Ant Media Server supports both of them however, if you want to have low latency in live stream, it would be better to use RTMP so that we have added RTMP play functionality to ExoPlayer, moreover this player is already integrated to our sample. You just need to run LiveVideoBroadcaster app on any other android device.
 
 When you run it, please click the Live Video player at this time. You should see a black screen like below.
 
