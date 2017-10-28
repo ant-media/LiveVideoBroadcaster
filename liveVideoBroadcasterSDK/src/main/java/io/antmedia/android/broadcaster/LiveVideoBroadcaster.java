@@ -548,10 +548,15 @@ public class LiveVideoBroadcaster extends Service implements ILiveVideoBroadcast
 
         int diff = Integer.MAX_VALUE;
         Resolution choosenSize = null;
+        Resolution deviceResolution = Resolution.newLikeDeviceResolution(this);
+        double deviceAspectRatio = (double) deviceResolution.width / (double) deviceResolution.height;
         for (int i = 0; i < previewSizeList.size(); i++) {
             Camera.Size size = previewSizeList.get(i);
-
-            if ((size.width % 16 == 0) && (size.height % 16 == 0)) {
+            double sizeAspectRatio = (double) size.width / (double) size.height;
+            Log.i(String.valueOf(i), "w:"+size.width+";h:"+size.height );
+            //if ((size.width % 16 == 0) && (size.height % 16 == 0)) {
+            if(deviceAspectRatio == sizeAspectRatio) {
+                Log.i(String.valueOf(i), "w:"+size.width+";h:"+size.height );
                 Resolution resolutionSize = new Resolution(size.width, size.height);
                 choosenPreviewsSizeList.add(resolutionSize);
                 int currentDiff = Math.abs(size.height - preferredHeight);
