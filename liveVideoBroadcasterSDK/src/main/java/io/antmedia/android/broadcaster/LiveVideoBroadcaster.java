@@ -529,12 +529,14 @@ public class LiveVideoBroadcaster extends Service implements ILiveVideoBroadcast
     private int setCameraParameters(Camera.Parameters parameters) {
 
         List<Camera.Size> previewSizeList = parameters.getSupportedPreviewSizes();
+
         Collections.sort(previewSizeList, new Comparator<Camera.Size>() {
 
             @Override
             public int compare(Camera.Size lhs, Camera.Size rhs) {
                 if (lhs.height == rhs.height) {
                     return lhs.width == rhs.width ? 0 : (lhs.width > rhs.width ? 1 : -1);
+
                 } else if (lhs.height > rhs.height) {
                     return 1;
                 }
@@ -542,43 +544,34 @@ public class LiveVideoBroadcaster extends Service implements ILiveVideoBroadcast
             }
         });
 
-        int preferredHeight = 720;
-
+        // 1280 x 720 is the max resolution to stream without lags
+        float desiredAspectRatio = 1280f / 720f;
         choosenPreviewsSizeList = new ArrayList<>();
 
-        int diff = Integer.MAX_VALUE;
-        Resolution choosenSize = null;
         for (int i = 0; i < previewSizeList.size(); i++) {
             Camera.Size size = previewSizeList.get(i);
+            float aspectRatio = (float) size.width / (float) size.height;
 
-            if ((size.width % 16 == 0) && (size.height % 16 == 0)) {
+            float diff = Math.abs(desiredAspectRatio - aspectRatio);
+            if (diff <= 0.01) { // 1% error margin
                 Resolution resolutionSize = new Resolution(size.width, size.height);
                 choosenPreviewsSizeList.add(resolutionSize);
-                int currentDiff = Math.abs(size.height - preferredHeight);
-                if (currentDiff < diff) {
-                    diff = currentDiff;
-                    choosenSize = resolutionSize;
-                }
             }
         }
+
+        int len = choosenPreviewsSizeList.size();
+        int resolutionIndex = len - 1;
 
         int[] requestedFrameRate = new int[]{frameRate * 1000, frameRate * 1000};
         int[] bestFps = findBestFrameRate(parameters.getSupportedPreviewFpsRange(), requestedFrameRate);
         parameters.setPreviewFpsRange(bestFps[0], bestFps[1]);
 
-        int len = choosenPreviewsSizeList.size();
-        int resolutionIndex = len-1;
-
-        if (choosenSize != null) {
-            resolutionIndex = choosenPreviewsSizeList.indexOf(choosenSize);
-        }
-
-
-        if (resolutionIndex >=0) {
+        if (resolutionIndex >= 0) {
             Resolution size = choosenPreviewsSizeList.get(resolutionIndex);
             parameters.setPreviewSize(size.width, size.height);
             parameters.setRecordingHint(true);
         }
+
         if (parameters.getSupportedFocusModes().contains(
                 Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO)) {
             parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
