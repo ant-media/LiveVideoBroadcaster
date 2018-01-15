@@ -257,6 +257,8 @@ public class LiveVideoBroadcasterActivity extends AppCompatActivity {
                                 startTimer();//start the recording duration
                             }
                             else {
+                                Snackbar.make(mRootView, R.string.stream_not_started, Snackbar.LENGTH_LONG).show();
+
                                 triggerStopRecording();
                             }
                         }

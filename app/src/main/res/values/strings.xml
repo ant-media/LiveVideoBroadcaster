@@ -58,4 +58,5 @@
     <string name="storage_permission_denied">Permission to access storage was denied</string>
 
     <string name="sample_list_load_error">One or more sample lists failed to load</string>
+    <string name="stream_not_started">Failed to start. Please check server url and security credentials.</string>
 </resources>
