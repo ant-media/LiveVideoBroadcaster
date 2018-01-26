@@ -29,10 +29,19 @@ import java.util.List;
  */
 public class Texture2dProgram {
     private static final String TAG = GlUtil.TAG;
+    private int height;
+    private int width;
+
+
+    public void setIntensity(float intensity) {
+        this.intensity = intensity;
+    }
+
 
     public enum ProgramType {
         TEXTURE_2D, TEXTURE_EXT, TEXTURE_EXT_BW, TEXTURE_EXT_FILT,
-        TEXTURE_EXT_SEPIA, TEXTURE_EXT_CROSSPROCESS, TEXTURE_EXT_POSTERIZE,TEXTURE_EXT_GRAYSCALE
+        TEXTURE_EXT_SEPIA, TEXTURE_EXT_CROSSPROCESS, TEXTURE_EXT_POSTERIZE,TEXTURE_EXT_GRAYSCALE,
+        TEXTURE_BEAUTIFY_FACE,
     }
 
     public static final List<ProgramType> EFFECTS = new ArrayList<>();
@@ -151,6 +160,134 @@ public class Texture2dProgram {
                 + "  gl_FragColor = vec4(ncolor.rgb, color.a);\n" +
               "}\n";
 
+    private static final String FRAGMENT_SHADER_BEAUTIFY_FACE =
+
+            "#extension GL_OES_EGL_image_external : require\n" +
+                    "precision mediump float;" +
+                    "varying vec2 vTextureCoord;" +
+                    "uniform samplerExternalOES sTexture;" +
+                    "uniform vec2 imageStep;" +
+                    "uniform float intensity;" +
+                    "void main() {" +
+                        "vec2 blurCoordinates[20];" +
+
+                        "blurCoordinates[0] = vTextureCoord + vec2(0.0, -10.0) * imageStep;" +
+                        "blurCoordinates[1] = vTextureCoord + vec2(5.0, -8.0) * imageStep;" +
+                        "blurCoordinates[2] = vTextureCoord + vec2(8.0, -5.0) * imageStep;" +
+                        "blurCoordinates[3] = vTextureCoord + vec2(10.0, 0.0) * imageStep;" +
+                        "blurCoordinates[4] = vTextureCoord + vec2(8.0, 5.0) * imageStep;" +
+                        "blurCoordinates[5] = vTextureCoord + vec2(5.0, 8.0) * imageStep;" +
+                        "blurCoordinates[6] = vTextureCoord + vec2(0.0, 10.0) * imageStep;" +
+                        "blurCoordinates[7] = vTextureCoord + vec2(-5.0, 8.0) * imageStep;" +
+                        "blurCoordinates[8] = vTextureCoord + vec2(-8.0, 5.0) * imageStep;" +
+                        "blurCoordinates[9] = vTextureCoord + vec2(-10.0, 0.0) * imageStep;" +
+                        "blurCoordinates[10] = vTextureCoord + vec2(-8.0, -5.0) * imageStep;" +
+                        "blurCoordinates[11] = vTextureCoord + vec2(-5.0, -8.0) * imageStep;" +
+                        "blurCoordinates[12] = vTextureCoord + vec2(0.0, -6.0) * imageStep;" +
+                        "blurCoordinates[13] = vTextureCoord + vec2(-4.0, -4.0) * imageStep;" +
+                        "blurCoordinates[14] = vTextureCoord + vec2(-6.0, 0.0) * imageStep;" +
+                        "blurCoordinates[15] = vTextureCoord + vec2(-4.0, 4.0) * imageStep;" +
+                        "blurCoordinates[16] = vTextureCoord + vec2(0.0, 6.0) * imageStep;" +
+                        "blurCoordinates[17] = vTextureCoord + vec2(4.0, 4.0) * imageStep;" +
+                        "blurCoordinates[18] = vTextureCoord + vec2(6.0, 0.0) * imageStep;" +
+                        "blurCoordinates[19] = vTextureCoord + vec2(4.0, -4.0) * imageStep;" +
+
+                        "vec3 centralColor = texture2D(sTexture, vTextureCoord).rgb;" +
+
+                        "float sampleColor = centralColor.g * 24.0;" +
+
+
+                        "sampleColor += texture2D(sTexture, blurCoordinates[0]).g;" +
+                        "sampleColor += texture2D(sTexture, blurCoordinates[1]).g;" +
+                        "sampleColor += texture2D(sTexture, blurCoordinates[2]).g;" +
+                        "sampleColor += texture2D(sTexture, blurCoordinates[3]).g;" +
+                        "sampleColor += texture2D(sTexture, blurCoordinates[4]).g;" +
+                        "sampleColor += texture2D(sTexture, blurCoordinates[5]).g;" +
+                        "sampleColor += texture2D(sTexture, blurCoordinates[6]).g;" +
+                        "sampleColor += texture2D(sTexture, blurCoordinates[7]).g;" +
+                        "sampleColor += texture2D(sTexture, blurCoordinates[8]).g;" +
+                        "sampleColor += texture2D(sTexture, blurCoordinates[9]).g;" +
+                        "sampleColor += texture2D(sTexture, blurCoordinates[10]).g;" +
+                        "sampleColor += texture2D(sTexture, blurCoordinates[11]).g;" +
+                        "sampleColor += texture2D(sTexture, blurCoordinates[12]).g;" +
+                        "sampleColor += texture2D(sTexture, blurCoordinates[13]).g;" +
+                        "sampleColor += texture2D(sTexture, blurCoordinates[14]).g;" +
+                        "sampleColor += texture2D(sTexture, blurCoordinates[15]).g;" +
+                        "sampleColor += texture2D(sTexture, blurCoordinates[16]).g;" +
+                        "sampleColor += texture2D(sTexture, blurCoordinates[17]).g;" +
+                        "sampleColor += texture2D(sTexture, blurCoordinates[18]).g;" +
+                        "sampleColor += texture2D(sTexture, blurCoordinates[19]).g;" +
+
+                        "sampleColor = sampleColor/44.0;" +
+
+                        "float dis = centralColor.g - sampleColor + 0.5;" +
+
+                        "if(dis <= 0.5) " +
+                        "{" +
+                            "dis = dis * dis * 2.0;" +
+                        "}" +
+                        "else"+
+                        "{"+
+                            "dis = 1.0 - ((1.0 - dis)*(1.0 - dis) * 2.0);"+
+                        "}"+
+
+                        " if(dis <= 0.5)"+
+                        "{"+
+                            "dis = dis * dis * 2.0;"+
+                        "}"+
+                        "else"+
+                        "{"+
+                            "dis = 1.0 - ((1.0 - dis)*(1.0 - dis) * 2.0);"+
+                        "}"+
+
+                        "if(dis <= 0.5)"+
+                        "{"+
+                            "dis = dis * dis * 2.0;"+
+                        "}"+
+                        "else"+
+                        "{"+
+                            "dis = 1.0 - ((1.0 - dis)*(1.0 - dis) * 2.0);"+
+                        "}"+
+
+                        "if(dis <= 0.5)"+
+                        "{"+
+                            "dis = dis * dis * 2.0;"+
+                        "}"+
+                        "else"+
+                        "{"+
+                            "dis = 1.0 - ((1.0 - dis)*(1.0 - dis) * 2.0);"+
+                        "}"+
+
+                        "if(dis <= 0.5)"+
+                        "{"+
+                        "     dis = dis * dis * 2.0;"+
+                        "}"+
+                        "else"+
+                        "{"+
+                            "dis = 1.0 - ((1.0 - dis)*(1.0 - dis) * 2.0);"+
+                        "}"+
+
+                        "vec3 result = centralColor * 1.065 - dis * 0.065;"+
+
+
+                        "float hue = dot(result, vec3(0.299,0.587,0.114)) - 0.3;" +
+
+                        "hue = pow(clamp(hue, 0.0, 1.0), 0.3);"+
+
+                        "result = centralColor * (1.0 - hue) + result * hue;"+
+                        "result = (result - 0.8) * 1.06 + 0.8;"+
+
+                        "result = pow(result, vec3(0.75));"+
+
+                        "result = mix(centralColor, result, intensity);"+
+
+                        "gl_FragColor = vec4(result, 1.0);" +
+
+                      //  "gl_FragColor = texture2D(sTexture, vTextureCoord);" +
+                    "}";
+
+
+
 
     // Fragment shader with a convolution filter.  The upper-left half will be drawn normally,
     // the lower-swipe_right half will have the filter applied, and a thin red line will be drawn
@@ -201,11 +338,16 @@ public class Texture2dProgram {
     private int maPositionLoc;
     private int maTextureCoordLoc;
 
+    private int muIntensityLoc;
+
     private int mTextureTarget;
 
     private float[] mKernel = new float[KERNEL_SIZE];
     private float[] mTexOffset;
     private float mColorAdjust;
+
+    private float intensity = 0.05f;
+    private int muImageStepLocation;
 
 
     /**
@@ -222,6 +364,10 @@ public class Texture2dProgram {
             case TEXTURE_EXT:
                 mTextureTarget = GLES11Ext.GL_TEXTURE_EXTERNAL_OES;
                 mProgramHandle = GlUtil.createProgram(VERTEX_SHADER, FRAGMENT_SHADER_EXT);
+                break;
+            case TEXTURE_BEAUTIFY_FACE:
+                mTextureTarget = GLES11Ext.GL_TEXTURE_EXTERNAL_OES;
+                mProgramHandle = GlUtil.createProgram(VERTEX_SHADER, FRAGMENT_SHADER_BEAUTIFY_FACE);
                 break;
             case TEXTURE_EXT_BW:
                 mTextureTarget = GLES11Ext.GL_TEXTURE_EXTERNAL_OES;
@@ -282,6 +428,27 @@ public class Texture2dProgram {
             setKernel(new float[] {0f, 0f, 0f,  0f, 1f, 0f,  0f, 0f, 0f}, 0f);
             setTexSize(256, 256);
         }
+
+        muIntensityLoc = GLES20.glGetUniformLocation(mProgramHandle,"intensity");
+        if (muIntensityLoc >= 0) {
+            Log.d(TAG, "Texture2dProgram: intensity exist");
+        }
+        else {
+            Log.d(TAG, "Texture2dProgram: intensity not exist");
+        }
+
+        muImageStepLocation = GLES20.glGetUniformLocation(mProgramHandle, "imageStep");
+        
+        if (muImageStepLocation >= 0) {
+            Log.d(TAG, "Texture2dProgram: imageStep exists");
+        }
+        else {
+            Log.d(TAG, "Texture2dProgram: ImageStep does not exist");
+        }
+
+
+
+        
     }
 
     /**
@@ -349,6 +516,9 @@ public class Texture2dProgram {
      * Sets the size of the texture.  This is used to find adjacent texels when filtering.
      */
     public void setTexSize(int width, int height) {
+        Log.d(TAG, "setTexSize width:" + width + " height: " + height);
+        this.width = width;
+        this.height = height;
         float rw = 1.0f / width;
         float rh = 1.0f / height;
 
@@ -420,6 +590,17 @@ public class Texture2dProgram {
             GLES20.glUniform1fv(muKernelLoc, KERNEL_SIZE, mKernel, 0);
             GLES20.glUniform2fv(muTexOffsetLoc, KERNEL_SIZE, mTexOffset, 0);
             GLES20.glUniform1f(muColorAdjustLoc, mColorAdjust);
+        }
+
+        if (muIntensityLoc >= 0) {
+            //Log.d(TAG, "draw: setting image  intensity: " + intensity);
+            GLES20.glUniform1f(muIntensityLoc, intensity);
+        }
+
+
+        if (muImageStepLocation >= 0 && width != 0 && height != 0) {
+            //Log.d(TAG, "draw: setting image step width: " + width + " height: " + height);
+            GLES20.glUniform2f(muImageStepLocation, width, height);
         }
 
         // Draw the rect.

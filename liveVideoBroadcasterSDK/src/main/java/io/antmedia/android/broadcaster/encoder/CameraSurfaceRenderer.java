@@ -57,6 +57,8 @@ public class CameraSurfaceRenderer implements GLSurfaceView.Renderer {
     private long mRecordingStartTime;
     private int bitrate;
     private int frameRate = 25;
+    private boolean mIntensityChanged = false;
+    private float intensity;
 
     /**
      * Constructs CameraSurfaceRenderer.
@@ -81,7 +83,7 @@ public class CameraSurfaceRenderer implements GLSurfaceView.Renderer {
 
     }
 
-    private Texture2dProgram.ProgramType mEffectType = Texture2dProgram.ProgramType.TEXTURE_EXT ;
+    private Texture2dProgram.ProgramType mEffectType = Texture2dProgram.ProgramType.TEXTURE_EXT;
 
     public void setEffect(Texture2dProgram.ProgramType effectType) {
         this.mEffectType = effectType;
@@ -177,6 +179,8 @@ public class CameraSurfaceRenderer implements GLSurfaceView.Renderer {
                 new Texture2dProgram(mEffectType));
 
         mVideoEncoder.setEffect(mEffectType);
+
+        mIncomingSizeUpdated = true;
 
         mTextureId = mFullScreen.createTextureObject();
 
@@ -295,6 +299,11 @@ public class CameraSurfaceRenderer implements GLSurfaceView.Renderer {
             mIncomingSizeUpdated = false;
         }
 
+        if (mIntensityChanged) {
+            mFullScreen.getProgram().setIntensity(intensity);
+            mIntensityChanged = false;
+        }
+
         // Draw the video frame.
         mSurfaceTexture.getTransformMatrix(mSTMatrix);
         mFullScreen.drawFrame(mTextureId, mSTMatrix);
@@ -331,6 +340,12 @@ public class CameraSurfaceRenderer implements GLSurfaceView.Renderer {
 
     public List<Texture2dProgram.ProgramType> getEffectList() {
         return Texture2dProgram.EFFECTS;
+    }
+
+
+    public void setIntensity(float intensity) {
+        this.intensity = intensity;
+        this.mIntensityChanged = true;
     }
 
 

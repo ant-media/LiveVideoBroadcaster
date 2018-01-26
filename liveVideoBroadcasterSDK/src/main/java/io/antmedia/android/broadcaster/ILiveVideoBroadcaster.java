@@ -5,6 +5,7 @@ import android.opengl.GLSurfaceView;
 
 import java.util.ArrayList;
 
+import io.antmedia.android.broadcaster.encoder.gles.Texture2dProgram;
 import io.antmedia.android.broadcaster.utils.Resolution;
 
 /**
@@ -108,4 +109,7 @@ public interface ILiveVideoBroadcaster {
     void stopBroadcasting();
 
 
+    void setEffect(Texture2dProgram.ProgramType effect);
+
+    void setFilterIntensity(float intensity);
 }

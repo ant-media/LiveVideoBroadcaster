@@ -40,6 +40,7 @@ import io.antmedia.android.broadcaster.encoder.AudioHandler;
 import io.antmedia.android.broadcaster.encoder.CameraSurfaceRenderer;
 import io.antmedia.android.broadcaster.encoder.TextureMovieEncoder;
 import io.antmedia.android.broadcaster.encoder.VideoEncoderCore;
+import io.antmedia.android.broadcaster.encoder.gles.Texture2dProgram;
 import io.antmedia.android.broadcaster.network.IMediaMuxer;
 import io.antmedia.android.broadcaster.network.RTMPStreamer;
 import io.antmedia.android.broadcaster.utils.Resolution;
@@ -366,6 +367,21 @@ public class LiveVideoBroadcaster extends Service implements ILiveVideoBroadcast
                 i++;
             }
         }
+
+    }
+
+    @Override
+    public void setEffect(Texture2dProgram.ProgramType effect) {
+        mGLView.onPause();
+
+        mRenderer.setEffect(effect);
+
+        mGLView.onResume();
+    }
+
+    @Override
+    public void setFilterIntensity(float intensity) {
+        mRenderer.setIntensity(intensity);
 
     }
 

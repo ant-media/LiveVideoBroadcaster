@@ -25,10 +25,18 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:id="@+id/transparent_cover"
-        android:background="#77000000"/>
+        android:background="#00000000"/>
     <!--
    </com.google.android.exoplayer.AspectRatioFrameLayout>
     -->
+
+
+
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
 
 
     <LinearLayout
@@ -59,6 +67,26 @@
             android:src="@drawable/ic_switch_camera_white_24dp"
             />
 
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="None"
+            android:onClick="changeEffectNormal"
+            />
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Beautify"
+            android:onClick="changeEffectBeautify"
+            />
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Sepia"
+            android:onClick="changeEffectSepia"
+            />
+
         <android.support.v4.widget.Space
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -74,6 +102,16 @@
             android:text="@string/live_indicator"
             android:visibility="gone"/>
 
+    </LinearLayout>
+        <SeekBar
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:indeterminate="false"
+            android:visibility="gone"
+
+            android:id="@+id/seek_intensity_bar"
+
+            android:layout_gravity="center"/>
     </LinearLayout>
 
 

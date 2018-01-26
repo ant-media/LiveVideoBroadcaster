@@ -22,12 +22,14 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.widget.ContentLoadingProgressBar;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.SeekBar;
 import android.widget.TextView;
 
 import java.util.ArrayList;
@@ -36,6 +38,7 @@ import java.util.TimerTask;
 
 import io.antmedia.android.broadcaster.ILiveVideoBroadcaster;
 import io.antmedia.android.broadcaster.LiveVideoBroadcaster;
+import io.antmedia.android.broadcaster.encoder.gles.Texture2dProgram;
 import io.antmedia.android.broadcaster.utils.Resolution;
 
 import static io.antmedia.android.MainActivity.RTMP_BASE_URL;
@@ -77,6 +80,7 @@ public class LiveVideoBroadcasterActivity extends AppCompatActivity {
             mLiveVideoBroadcaster = null;
         }
     };
+    private SeekBar seekbar;
 
 
     @Override
@@ -110,6 +114,32 @@ public class LiveVideoBroadcasterActivity extends AppCompatActivity {
         if (mGLView != null) {
             mGLView.setEGLContextClientVersion(2);     // select GLES 2.0
         }
+
+        seekbar = (SeekBar) findViewById(R.id.seek_intensity_bar);
+
+        seekbar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+
+
+                float intensity = progress / 100f;
+
+                Log.d("Seekbar", "onProgressChanged intensity: " + intensity);
+                if (mLiveVideoBroadcaster != null) {
+                    mLiveVideoBroadcaster.setFilterIntensity(intensity);
+                }
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
+            }
+        });
     }
 
     public void changeCamera(View v) {
@@ -118,11 +148,29 @@ public class LiveVideoBroadcasterActivity extends AppCompatActivity {
         }
     }
 
+
+    public void changeEffectNormal(View view) {
+        seekbar.setVisibility(View.GONE);
+        mLiveVideoBroadcaster.setEffect(Texture2dProgram.ProgramType.TEXTURE_EXT);
+    }
+
+    public void changeEffectBeautify(View view) {
+        seekbar.setVisibility(View.VISIBLE);
+        mLiveVideoBroadcaster.setEffect(Texture2dProgram.ProgramType.TEXTURE_BEAUTIFY_FACE);
+    }
+
+    public void changeEffectSepia(View view) {
+        seekbar.setVisibility(View.GONE);
+        mLiveVideoBroadcaster.setEffect(Texture2dProgram.ProgramType.TEXTURE_EXT_SEPIA);
+    }
+
+
     @Override
     protected void onStart() {
         super.onStart();
         //this lets activity bind
         bindService(mLiveVideoBroadcasterServiceIntent, mConnection, 0);
+
 
     }
 
@@ -329,6 +377,9 @@ public class LiveVideoBroadcasterActivity extends AppCompatActivity {
     public void setResolution(Resolution size) {
         mLiveVideoBroadcaster.setResolution(size);
     }
+
+
+
 
     private class TimerHandler extends Handler {
         static final int CONNECTION_LOST = 2;
