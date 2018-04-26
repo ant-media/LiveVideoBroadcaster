@@ -10,7 +10,10 @@ import io.antmedia.android.liveVideoPlayer.LiveVideoPlayerActivity;
 
 public class MainActivity extends AppCompatActivity {
 
-    public static final String RTMP_BASE_URL = "rtmp://192.168.43.168/vod/";
+    /**
+     * PLEASE WRITE RTMP BASE URL of the your RTMP SERVER.
+     */
+    public static final String RTMP_BASE_URL = "rtmp://10.2.41.95/LiveApp/";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
