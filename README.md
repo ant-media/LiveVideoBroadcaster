@@ -12,7 +12,7 @@ First of all, a live stream should be sent to a media server that can distribute
 
 Anyway, there are media servers you can purchase licence, fortunately you do not need to pay anything and you can download Ant Media Server Community Edition at antmedia.io. Ant Media Server can distribute live stream in RTMP, RTSP and HLS formats. Moreover, it records live streams in MP4 format. It means your live streams and recorded streams can play in both all mobile and desktop browsers.
 
-After you download Ant Media Server, extract it and run the start.sh (start.bat on Windows) file in your computer.
+After you download Ant Media Server, extract it and run the start.sh file in your computer.
 ```
 ./start.sh
 ```
