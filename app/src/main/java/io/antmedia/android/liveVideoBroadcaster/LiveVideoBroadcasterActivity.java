@@ -22,6 +22,7 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.widget.ContentLoadingProgressBar;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
@@ -43,6 +44,7 @@ import static io.antmedia.android.MainActivity.RTMP_BASE_URL;
 public class LiveVideoBroadcasterActivity extends AppCompatActivity {
 
 
+    private static final String TAG = LiveVideoBroadcasterActivity.class.getSimpleName();
     private ViewGroup mRootView;
     boolean mIsRecording = false;
     private EditText mStreamNameEditText;
@@ -175,6 +177,8 @@ public class LiveVideoBroadcasterActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
+        Log.i(TAG, "onPause");
+
         //hide dialog if visible not to create leaked window exception
         if (mCameraResolutionsDialog != null && mCameraResolutionsDialog.isVisible()) {
             mCameraResolutionsDialog.dismiss();

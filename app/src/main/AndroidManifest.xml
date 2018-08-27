@@ -27,10 +27,13 @@
         </activity>
 
         <activity android:name="io.antmedia.android.liveVideoBroadcaster.LiveVideoBroadcasterActivity"
-            android:theme="@style/AppThemeDark"/>
+            android:theme="@style/AppThemeDark"
+            android:configChanges="orientation|keyboardHidden|screenSize"
+            />
 
         <activity android:name="io.antmedia.android.liveVideoPlayer.LiveVideoPlayerActivity"
-            android:theme="@style/AppThemeDark"/>
+            android:theme="@style/AppThemeDark"
+            />
 
         <service android:name="io.antmedia.android.broadcaster.LiveVideoBroadcaster" />
     </application>

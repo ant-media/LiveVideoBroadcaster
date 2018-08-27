@@ -97,6 +97,7 @@ public class RTMPStreamer extends Handler implements IMediaMuxer  {
     }
 
     public void close() {
+        Log.i(TAG, "close rtmp connection");
         isConnected = false;
         rtmpMuxer.close();
     }

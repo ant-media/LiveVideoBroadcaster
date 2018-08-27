@@ -122,8 +122,11 @@ public class LiveVideoBroadcaster extends Service implements ILiveVideoBroadcast
 
     public void setDisplayOrientation() {
         if (sCameraProxy != null) {
+
             sCameraProxy.setDisplayOrientation(getCameraDisplayOrientation());
-            setRendererPreviewSize();
+            if (!isConnected()) {
+                setRendererPreviewSize();
+            }
         }
     }
 
@@ -251,7 +254,7 @@ public class LiveVideoBroadcaster extends Service implements ILiveVideoBroadcast
 
 
                             int frameCountInQueue = mRtmpStreamer.getVideoFrameCountInQueue();
-                            System.out.println("video frameCountInQueue : " + frameCountInQueue);
+                            Log.d(TAG, "video frameCountInQueue : " + frameCountInQueue);
                             if (frameCountInQueue > previousFrameCount) {
                                 frameQueueIncreased++;
                             }
