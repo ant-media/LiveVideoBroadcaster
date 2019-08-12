@@ -1,3 +1,5 @@
+Please submit your issues on [Ant-Media-Server](https://github.com/ant-media/Ant-Media-Server)
+
 # LiveVideoBroadcaster
 Native Android app that can broadcast and play live video via RTMP - It is developed by [Ant Media](http://antmedia.io)
 
