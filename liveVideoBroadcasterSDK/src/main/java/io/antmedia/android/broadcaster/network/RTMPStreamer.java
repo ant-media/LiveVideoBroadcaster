@@ -192,12 +192,12 @@ public class RTMPStreamer extends Handler implements IMediaMuxer  {
         // and the same algorithm applies for audio frames.
         int listSize = videoFrameList.size();
         if (listSize > 0) {
-            sendAudioFrames(videoFrameList.get(0).timestamp);
+            sendVideoFrames(videoFrameList.get(0).timestamp);
         }
 
         listSize = audioFrameList.size();
         if (listSize > 0) {
-            sendVideoFrames(audioFrameList.get(0).timestamp);
+            sendAudioFrames(audioFrameList.get(0).timestamp);
         }
     }
 
