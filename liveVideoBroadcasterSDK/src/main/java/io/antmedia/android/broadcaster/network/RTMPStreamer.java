@@ -27,7 +27,10 @@ public class RTMPStreamer extends Handler implements IMediaMuxer  {
 
     private static final boolean DEBUG = false;
     private static final String TAG = RTMPStreamer.class.getSimpleName();
+    private static final int BUFFER_SIZE = 4096;
     RTMPMuxer rtmpMuxer = new RTMPMuxer();
+
+    private byte[] pcmBufferMuted = new byte[BUFFER_SIZE];
 
     public int frameCount;
     public  int result = 0;
@@ -38,6 +41,7 @@ public class RTMPStreamer extends Handler implements IMediaMuxer  {
     private int lastSentFrameTimeStamp = -1;
     private Object frameSynchronized = new Object();
     private boolean isConnected = false;
+    private boolean isAudioEnabled = true;
 
     public class Frame {
         byte[] data;
@@ -124,6 +128,9 @@ public class RTMPStreamer extends Handler implements IMediaMuxer  {
                     // add packet if the new frame timestamp is bigger than the last frame
                     // otherwise discard the packet. If we don't discard it, rtmp connection totally drops
                     mLastReceivedAudioFrameTimeStamp = msg.arg2;
+                    if (!isAudioEnabled) {
+                        msg.obj = pcmBufferMuted;
+                    }
                     audioFrameList.add(new Frame((byte[]) msg.obj, msg.arg1, msg.arg2));
                 }
                 else {
@@ -295,13 +302,17 @@ public class RTMPStreamer extends Handler implements IMediaMuxer  {
         rtmpMuxer.file_open(s);
     }
 
-
     public void file_close() {
         rtmpMuxer.file_close();
     }
 
     public boolean isConnected() {
         return isConnected;
+    }
+
+    @Override
+    public void setAudioEnable(boolean enable) {
+        isAudioEnabled = enable;
     }
 
     @Override

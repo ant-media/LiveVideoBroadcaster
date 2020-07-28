@@ -95,6 +95,13 @@ public interface ILiveVideoBroadcaster {
     boolean isConnected();
 
     /**
+     * Set audio streaming enable or disable
+     *
+     * @param enable, if false, send empty audio buffer, defaults true
+     */
+    void setAudioEnable(boolean enable);
+
+    /**
      * Starts broadcasting the specified url
      * @param url the rtmp url which should be in form rtmp://SERVER_ADDRESS/APP_NAME/STREAM_NAME
      * @return true if it starts broadcasting successfully,
