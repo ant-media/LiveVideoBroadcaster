@@ -41,12 +41,12 @@
         android:layout_alignParentStart="true">
         <ImageButton
             android:id="@+id/settings_button"
+            style="?borderlessButtonStyle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:adjustViewBounds="true"
             android:onClick="showSetResolutionDialog"
             android:src="@drawable/ic_settings_white_24dp"
-            style="?borderlessButtonStyle"
             />
 
         <ImageButton
@@ -57,6 +57,16 @@
             android:adjustViewBounds="true"
             android:onClick="changeCamera"
             android:src="@drawable/ic_switch_camera_white_24dp"
+            />
+
+        <ImageButton
+            android:id="@+id/mic_mute_button"
+            style="?attr/borderlessButtonStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:adjustViewBounds="true"
+            android:onClick="toggleMute"
+            android:src="@drawable/ic_mic_mute_on_24"
             />
 
         <android.support.v4.widget.Space

@@ -33,6 +33,8 @@ public interface IMediaMuxer {
 
     void stopMuxer();
 
+    void setAudioEnable(boolean enable);
+
     int getFrameCountInQueue();
 
     int getVideoFrameCountInQueue();

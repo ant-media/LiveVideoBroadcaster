@@ -799,6 +799,11 @@ public class LiveVideoBroadcaster extends Service implements ILiveVideoBroadcast
         }.execute();
     }
 
+    @Override
+    public void setAudioEnable(boolean enable) {
+        mRtmpStreamer.setAudioEnable(enable);
+    }
+
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {

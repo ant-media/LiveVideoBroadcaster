@@ -29,6 +29,7 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import java.util.ArrayList;
@@ -47,6 +48,7 @@ public class LiveVideoBroadcasterActivity extends AppCompatActivity {
     private static final String TAG = LiveVideoBroadcasterActivity.class.getSimpleName();
     private ViewGroup mRootView;
     boolean mIsRecording = false;
+    boolean mIsMuted = false;
     private EditText mStreamNameEditText;
     private Timer mTimer;
     private long mElapsedTime;
@@ -283,6 +285,15 @@ public class LiveVideoBroadcasterActivity extends AppCompatActivity {
 
     }
 
+    public void toggleMute(View v) {
+        if (v instanceof ImageView) {
+            ImageView iv = (ImageView) v;
+            mIsMuted = !mIsMuted;
+            mLiveVideoBroadcaster.setAudioEnable(!mIsMuted);
+            iv.setImageDrawable(getResources()
+                    .getDrawable(mIsMuted ? R.drawable.ic_mic_mute_off_24 : R.drawable.ic_mic_mute_on_24));
+        }
+    }
 
     public void triggerStopRecording() {
         if (mIsRecording) {
