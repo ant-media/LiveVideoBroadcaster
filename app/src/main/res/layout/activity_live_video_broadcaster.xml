@@ -1,34 +1,32 @@
-<android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".LiveVideoBroadcasterActivity"
     android:id="@+id/root_layout">
 
-    <!--
-    <com.google.android.exoplayer.AspectRatioFrameLayout
-        android:id="@+id/cameraPreview_afl"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_gravity="center"
-        android:layout_centerInParent="true"
-        >
-        -->
+
     <android.opengl.GLSurfaceView
         android:id="@+id/cameraPreview_surfaceView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-
         android:visibility="gone"
         android:layout_gravity="center" />
+
+    <android.opengl.GLSurfaceView
+        android:id="@+id/screenPreview_surfaceView"
+        android:layout_gravity="bottom|right"
+        android:layout_height="100dp"
+        android:layout_width="100dp"
+        android:visibility="gone"
+        />
+
     <View
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:id="@+id/transparent_cover"
         android:background="#77000000"/>
-    <!--
-   </com.google.android.exoplayer.AspectRatioFrameLayout>
-    -->
+
 
 
     <LinearLayout
@@ -59,7 +57,7 @@
             android:src="@drawable/ic_switch_camera_white_24dp"
             />
 
-        <android.support.v4.widget.Space
+        <androidx.legacy.widget.Space
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"/>
@@ -90,6 +88,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="@string/stream_name"
+            android:text="stream-demo"
             android:textAppearance="?android:textAppearanceMedium"
             />
         <Button
@@ -104,4 +103,4 @@
             android:textAppearance="?android:textAppearanceMedium"
             />
     </LinearLayout>
-</android.support.design.widget.CoordinatorLayout>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

@@ -1,23 +1,19 @@
 package io.antmedia.android.broadcaster.network;
 
-import android.app.Service;
-import android.content.Intent;
-import android.os.Binder;
 import android.os.Handler;
-import android.os.HandlerThread;
-import android.os.IBinder;
 import android.os.Looper;
 import android.os.Message;
-import android.support.annotation.Nullable;
 import android.util.Log;
 
 
 import net.butterflytv.rtmp_client.RTMPMuxer;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
-
-import io.antmedia.android.broadcaster.network.IMediaMuxer;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created by faraklit on 09.02.2016.
@@ -29,15 +25,18 @@ public class RTMPStreamer extends Handler implements IMediaMuxer  {
     private static final String TAG = RTMPStreamer.class.getSimpleName();
     RTMPMuxer rtmpMuxer = new RTMPMuxer();
 
-    public int frameCount;
+    public AtomicInteger frameCount = new AtomicInteger(0);
     public  int result = 0;
-    private int lastVideoFrameTimeStamp;
-    private int lastAudioFrameTimeStamp;
-    private int mLastReceivedVideoFrameTimeStamp = -1;
-    private int mLastReceivedAudioFrameTimeStamp = -1;
-    private int lastSentFrameTimeStamp = -1;
+    private volatile int lastVideoFrameTimeStamp;
+    private volatile int lastAudioFrameTimeStamp;
+    private volatile int mLastReceivedVideoFrameTimeStamp = -1;
+    private volatile int mLastReceivedAudioFrameTimeStamp = -1;
+    private volatile int lastSentFrameTimeStamp = -1;
     private Object frameSynchronized = new Object();
     private boolean isConnected = false;
+    private byte[] audioConfig = null;
+    private byte[] videoConfig = null;
+    private volatile boolean closed;
 
     public class Frame {
         byte[] data;
@@ -51,8 +50,8 @@ public class RTMPStreamer extends Handler implements IMediaMuxer  {
         }
     }
 
-    private ArrayList<Frame> audioFrameList = new ArrayList<>();
-    private ArrayList<Frame> videoFrameList = new ArrayList<>();
+    private List<Frame> audioFrameList = Collections.synchronizedList(new LinkedList<Frame>());
+    private List<Frame> videoFrameList = Collections.synchronizedList(new LinkedList<Frame>());
 
 
     public RTMPStreamer(Looper looper) {
@@ -79,25 +78,40 @@ public class RTMPStreamer extends Handler implements IMediaMuxer  {
      * @param url of the stream
      */
     public boolean open(String url) {
-        frameCount = 0;
+        frameCount.set(0);
         lastVideoFrameTimeStamp = 0;
         lastAudioFrameTimeStamp = 0;
         mLastReceivedVideoFrameTimeStamp = -1;
         mLastReceivedAudioFrameTimeStamp = -1;
         lastSentFrameTimeStamp = -1;
         isConnected = false;
+
+
         int result = rtmpMuxer.open(url, 0, 0);
 
         if (result > 0) {
             //    file_open("/mnt/sdcard/stream.flv" + (int) Math.random() * 1000);
             //    writeFLVHeader(true, true);
+
+
+            //if it's once closed and re-opened automatically, send the frame
+            if (closed)
+            {
+                rtmpMuxer.writeAudio(audioConfig, 0, audioConfig.length, 0);
+
+                rtmpMuxer.writeVideo(videoConfig, 0, videoConfig.length, 1);
+
+            }
+
             isConnected = true;
         }
+
         return isConnected;
     }
 
-    public void close() {
+    private void close() {
         Log.i(TAG, "close rtmp connection");
+        closed = true;
         isConnected = false;
         rtmpMuxer.close();
     }
@@ -119,15 +133,17 @@ public class RTMPStreamer extends Handler implements IMediaMuxer  {
                  * msg.arg2 timestamp
                  */
 
+                Log.w(TAG, "handle mLastReceivedAudioFrameTimeStamp: " + mLastReceivedAudioFrameTimeStamp);
                 if ((msg.arg2 >= mLastReceivedAudioFrameTimeStamp) && (msg.arg1 > 0)) {
                     //some initial frames(decoder params) may be equal to previos ones
                     // add packet if the new frame timestamp is bigger than the last frame
                     // otherwise discard the packet. If we don't discard it, rtmp connection totally drops
                     mLastReceivedAudioFrameTimeStamp = msg.arg2;
+                    Log.w(TAG, "incoming audio frame timestamp: " + mLastReceivedAudioFrameTimeStamp );
                     audioFrameList.add(new Frame((byte[]) msg.obj, msg.arg1, msg.arg2));
                 }
                 else {
-                    Log.w(TAG, "discarding audio packet because time stamp is older than last packet or data lenth equal to zero");
+                    Log.w(TAG, "discarding audio packet because time stamp("+msg.arg2+") is older than last packet("+mLastReceivedAudioFrameTimeStamp+") or data lenth equal to zero. Data length:" + msg.arg1);
                 }
                 sendFrames();
             }
@@ -139,23 +155,31 @@ public class RTMPStreamer extends Handler implements IMediaMuxer  {
                  * msg.arg1 length of the data
                  * msg.arg2 timestamp
                  */
+                Log.w(TAG, "handle mLastReceivedVideoFrameTimeStamp: " + mLastReceivedVideoFrameTimeStamp);
                 if ((msg.arg2 >= mLastReceivedVideoFrameTimeStamp) && (msg.arg1 > 0)) {
                     //some initial frames(decoder params) may be equal to previous ones
                     // add packet if the new frame timestamp is bigger than the last frame
                     // otherwise discard the packet. If we don't discard it, rtmp connection totally drops
                     mLastReceivedVideoFrameTimeStamp = msg.arg2;
+                    Log.w(TAG, "incoming video frame timestamp: " + mLastReceivedVideoFrameTimeStamp );
                     videoFrameList.add(new Frame((byte[]) msg.obj, msg.arg1, msg.arg2));
                 }
                 else {
-
-                    Log.w(TAG, "discarding videp packet because time stamp is older  than last packet or data lenth equal to zero");
+                    Log.w(TAG, "discarding videp packet because time stamp("+msg.arg2+") is older than last packet("+mLastReceivedVideoFrameTimeStamp+") or data lenth("+msg.arg1+") equal to zero");
                 }
                 sendFrames();
             }
             break;
             case STOP_STREAMING:
+                videoConfig = null;
+                audioConfig = null;
                 finishframes();
                 close();
+                //convert closed to false because it's an graceful close and let it start from scratch for the new session
+                closed = false;
+                mLastReceivedVideoFrameTimeStamp = 0;
+                mLastReceivedVideoFrameTimeStamp = 0;
+                Log.w(TAG, "Stopping streaming in RTMPStreamer");
                 break;
         }
 
@@ -221,21 +245,32 @@ public class RTMPStreamer extends Handler implements IMediaMuxer  {
                             Log.d(TAG, "send audio result: " + result + " time:" + audioFrame.timestamp + " length:" + audioFrame.length);
                         }
 
-                        if (result < 0) {
+                        if (result >= 0) {
+                            //only remove from list if it is written
+                            lastAudioFrameTimeStamp = audioFrame.timestamp;
+                            lastSentFrameTimeStamp = audioFrame.timestamp;
+                            frameCount.decrementAndGet();
+                            iterator.remove();
+                        }
+                        else //(result < 0)
+                        {
                             close();
                         }
                     }
-                    lastAudioFrameTimeStamp = audioFrame.timestamp;
-                    lastSentFrameTimeStamp = audioFrame.timestamp;
-                    synchronized (frameSynchronized) {
-                        frameCount--;
+                    else {
+                        if (DEBUG) {
+                            Log.w(TAG, "Cannot write audio because it's not connected");
+                        }
                     }
+
                 }
-                iterator.remove();
             }
             else {
                 //if timestamp is bigger than the auio frame timestamp
                 //it will be sent later so break the loop
+                if (DEBUG) {
+                    Log.d(TAG, "Timestamp is bigger than the audio frame timestamp, it will be sent later so break the loop");
+                }
                 break;
             }
         }
@@ -258,22 +293,33 @@ public class RTMPStreamer extends Handler implements IMediaMuxer  {
                         if (DEBUG) {
                             Log.d(TAG, "send video result: " + result + " time:" + frame.timestamp + " length:" + frame.length);
                         }
-                        if (result < 0) {
+                        if (result >= 0) {
+                            //only remove from list if it is written
+                            lastVideoFrameTimeStamp = frame.timestamp;
+                            lastSentFrameTimeStamp = frame.timestamp;
+                            iterator.remove();
+                            frameCount.decrementAndGet();
+                        }
+                        else //if (result < 0)
+                        {
                             close();
                         }
                     }
-                    lastVideoFrameTimeStamp = frame.timestamp;
-                    lastSentFrameTimeStamp = frame.timestamp;
-                    synchronized (frameSynchronized) {
-                        frameCount--;
+                    else {
+                        if (DEBUG) {
+                            Log.w(TAG, "Cannot write video because it's not connected");
+                        }
                     }
-                }
 
-                iterator.remove();
+
+                }
             }
             else {
                 //if frame timestamp is not smaller than the timestamp
                 // break the loop, it will be sent later
+                if (DEBUG) {
+                    Log.d(TAG, "timestamp is bigger than the video frame timestamp, it will be sent later so break the loop");
+                }
                 break;
             }
         }
@@ -306,25 +352,32 @@ public class RTMPStreamer extends Handler implements IMediaMuxer  {
 
     @Override
     public void writeAudio(byte[] data, int size, int presentationTime) {
+        if (audioConfig == null) {
+            audioConfig = new byte[size];
+            System.arraycopy(data, 0, audioConfig, 0, size);
+            Log.i(TAG, "write audio config length is " + audioConfig.length);
+        }
         Message message = obtainMessage(IMediaMuxer.SEND_AUDIO, data);
         message.arg1 = size;
         message.arg2 = presentationTime;
         sendMessage(message);
-        synchronized (frameSynchronized) {
-            frameCount++;
-        }
+        frameCount.incrementAndGet();
         if (DEBUG) Log.d(TAG, "writeAudio size: " + size + " time:" + presentationTime);
     }
 
     @Override
     public void writeVideo(byte[] data, int length, int presentationTime) {
+        if (videoConfig == null)
+        {
+            videoConfig = new byte[length];
+            System.arraycopy(data, 0, videoConfig, 0, videoConfig.length);
+            Log.i(TAG, "write video config length is " + videoConfig.length);
+        }
         Message message = obtainMessage(IMediaMuxer.SEND_VIDEO, data);
         message.arg1 = length;
         message.arg2 = presentationTime;
         sendMessage(message);
-        synchronized (frameSynchronized) {
-            frameCount++;
-        }
+        frameCount.incrementAndGet();
 
         if (DEBUG) Log.d(TAG, "writeVideo size: " + length + " time:" + presentationTime);
     }
@@ -336,9 +389,7 @@ public class RTMPStreamer extends Handler implements IMediaMuxer  {
 
     @Override
     public int getFrameCountInQueue() {
-        synchronized (frameSynchronized) {
-            return frameCount;
-        }
+      return frameCount.get();
     }
 
     public int getVideoFrameCountInQueue() {

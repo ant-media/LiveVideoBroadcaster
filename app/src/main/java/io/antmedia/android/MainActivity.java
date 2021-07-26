@@ -1,7 +1,7 @@
 package io.antmedia.android;
 
 import android.content.Intent;
-import android.support.v7.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 
@@ -13,7 +13,7 @@ public class MainActivity extends AppCompatActivity {
     /**
      * PLEASE WRITE RTMP BASE URL of the your RTMP SERVER.
      */
-    public static final String RTMP_BASE_URL = "rtmp://10.10.31.87/LiveApp/";
+    public static final String RTMP_BASE_URL = "rtmp://ovh36.antmedia.io/LiveApp/";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

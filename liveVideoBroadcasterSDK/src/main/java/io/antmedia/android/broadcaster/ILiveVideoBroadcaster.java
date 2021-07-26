@@ -1,7 +1,9 @@
 package io.antmedia.android.broadcaster;
 
 import android.app.Activity;
+import android.media.projection.MediaProjection;
 import android.opengl.GLSurfaceView;
+import android.view.SurfaceView;
 
 import java.util.ArrayList;
 
@@ -15,12 +17,13 @@ public interface ILiveVideoBroadcaster {
 
     /**
      * Initializes video broadcaster
-     * @param activity
-     * the activity which is using this service
      * @param mGLView
      * the GLSurfaceView which is used to render camera view
+     * @param activity
+ * the activity which is using this service
+     * @param surfaceView
      */
-    void init(Activity activity, GLSurfaceView gLView);
+    void init(Activity activity, GLSurfaceView gLView, SurfaceView surfaceView);
 
     /**
      * Checks whether camera and microphone permissions are granted
@@ -107,5 +110,5 @@ public interface ILiveVideoBroadcaster {
      */
     void stopBroadcasting();
 
-
+    void setMediaProjection(MediaProjection mMediaProjection, int densityDpi, int widthPixels, int heightPixels);
 }

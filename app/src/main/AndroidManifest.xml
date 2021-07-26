@@ -18,19 +18,20 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
 
-        <activity android:name="io.antmedia.android.MainActivity">
+        <!-- <activity android:name="io.antmedia.android.MainActivity"> -->
+        <activity android:name="io.antmedia.android.liveVideoBroadcaster.LiveVideoBroadcasterActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
+        <!--
         <activity android:name="io.antmedia.android.liveVideoBroadcaster.LiveVideoBroadcasterActivity"
             android:theme="@style/AppThemeDark"
             android:configChanges="orientation|keyboardHidden|screenSize"
             />
-
+-->
 
         <activity android:name="io.antmedia.android.liveVideoPlayer.LiveVideoPlayerActivity"
             android:theme="@style/AppThemeDark"

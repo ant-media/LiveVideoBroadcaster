@@ -1,28 +1,41 @@
 package io.antmedia.android.liveVideoBroadcaster;
 
 import android.Manifest;
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.res.Configuration;
 import android.hardware.Camera;
+import android.hardware.display.DisplayManager;
+import android.hardware.display.VirtualDisplay;
+import android.media.projection.MediaProjection;
+import android.media.projection.MediaProjectionManager;
 import android.net.Uri;
 import android.opengl.GLSurfaceView;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
-import android.support.design.widget.Snackbar;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentTransaction;
-import android.support.v4.widget.ContentLoadingProgressBar;
-import android.support.v7.app.AppCompatActivity;
+import com.google.android.material.snackbar.Snackbar;
+
+import androidx.annotation.RequiresApi;
+import androidx.core.app.ActivityCompat;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentTransaction;
+import androidx.core.widget.ContentLoadingProgressBar;
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.Surface;
+import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
@@ -30,6 +43,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.Timer;
@@ -58,10 +72,19 @@ public class LiveVideoBroadcasterActivity extends AppCompatActivity {
     private GLSurfaceView mGLView;
     private ILiveVideoBroadcaster mLiveVideoBroadcaster;
     private Button mBroadcastControlButton;
+    private MediaProjectionManager mMediaProjectionManager;
+
+    private static final int REQUEST_MEDIA_PROJECTION = 1;
+    private int mResultCode;
+    private Intent mResultData;
+    private MediaProjection mMediaProjection;
+    private VirtualDisplay mVirtualDisplay;
+    private Surface mSurface;
 
     /** Defines callbacks for service binding, passed to bindService() */
     private ServiceConnection mConnection = new ServiceConnection() {
 
+        @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
         @Override
         public void onServiceConnected(ComponentName className,
                                        IBinder service) {
@@ -69,10 +92,20 @@ public class LiveVideoBroadcasterActivity extends AppCompatActivity {
             LiveVideoBroadcaster.LocalBinder binder = (LiveVideoBroadcaster.LocalBinder) service;
             if (mLiveVideoBroadcaster == null) {
                 mLiveVideoBroadcaster = binder.getService();
-                mLiveVideoBroadcaster.init(LiveVideoBroadcasterActivity.this, mGLView);
-                mLiveVideoBroadcaster.setAdaptiveStreaming(true);
+                mLiveVideoBroadcaster.init(LiveVideoBroadcasterActivity.this, mGLView, null);
+                mLiveVideoBroadcaster.setAdaptiveStreaming(false);
             }
             mLiveVideoBroadcaster.openCamera(Camera.CameraInfo.CAMERA_FACING_FRONT);
+
+            /*
+            mMediaProjectionManager = (MediaProjectionManager)
+                    getSystemService(Context.MEDIA_PROJECTION_SERVICE);
+
+            startActivityForResult(
+                    mMediaProjectionManager.createScreenCaptureIntent(),
+                    REQUEST_MEDIA_PROJECTION);
+            */
+
         }
         @Override
         public void onServiceDisconnected(ComponentName arg0) {
@@ -81,14 +114,15 @@ public class LiveVideoBroadcasterActivity extends AppCompatActivity {
     };
 
 
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         // Hide title
         //requestWindowFeature(Window.FEATURE_NO_TITLE);
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+     //   getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+     //   getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
         //binding on resume not to having leaked service connection
         mLiveVideoBroadcasterServiceIntent = new Intent(this, LiveVideoBroadcaster.class);
@@ -112,6 +146,7 @@ public class LiveVideoBroadcasterActivity extends AppCompatActivity {
         if (mGLView != null) {
             mGLView.setEGLContextClientVersion(2);     // select GLES 2.0
         }
+
     }
 
     public void changeCamera(View v) {
@@ -197,9 +232,37 @@ public class LiveVideoBroadcasterActivity extends AppCompatActivity {
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
 
-        if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE || newConfig.orientation == Configuration.ORIENTATION_PORTRAIT) {
-            mLiveVideoBroadcaster.setDisplayOrientation();
+        //if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE || newConfig.orientation == Configuration.ORIENTATION_PORTRAIT) {
+        //    mLiveVideoBroadcaster.setDisplayOrientation();
+        //}
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == REQUEST_MEDIA_PROJECTION) {
+            if (resultCode != Activity.RESULT_OK) {
+                Log.i(TAG, "User cancelled");
+                Toast.makeText(this,"Screen permission is not granted", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            Log.i(TAG, "Starting screen capture");
+            mResultCode = resultCode;
+            mResultData = data;
+            setUpMediaProjection();
+            setUpVirtualDisplay();
         }
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+    private void setUpMediaProjection() {
+        mMediaProjection = mMediaProjectionManager.getMediaProjection(mResultCode, mResultData);
+    }
+    private void setUpVirtualDisplay() {
+        DisplayMetrics metrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(metrics);
+
+        mLiveVideoBroadcaster.setMediaProjection(mMediaProjection, metrics.densityDpi, metrics.widthPixels, metrics.heightPixels);
 
     }
 
@@ -344,11 +407,14 @@ public class LiveVideoBroadcasterActivity extends AppCompatActivity {
                     mStreamLiveStatus.setText(getString(R.string.live_indicator) + " - " + getDurationString((int) mElapsedTime));
                     break;
                 case CONNECTION_LOST:
+                    /*
                     triggerStopRecording();
                     new AlertDialog.Builder(LiveVideoBroadcasterActivity.this)
                             .setMessage(R.string.broadcast_connection_lost)
                             .setPositiveButton(android.R.string.yes, null)
                             .show();
+
+                     */
 
                     break;
             }

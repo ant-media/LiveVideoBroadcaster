@@ -237,7 +237,7 @@ public class TextureMovieEncoder implements Runnable {
         long frameTime = System.currentTimeMillis();
         if (mVideoEncoder != null && (frameTime - mLastFrameTime) >= getFrameInterval())
         {
-           Log.d(TAG, " get frame interval :" + getFrameInterval());
+           //Log.d(TAG, " get frame interval :" + getFrameInterval());
             // encode data at least in every 50 milliseconds, it measn 20fps or less
             long timestamp = (frameTime - mRecordingStartTime)
                     * 1000000; // convert it to nano seconds

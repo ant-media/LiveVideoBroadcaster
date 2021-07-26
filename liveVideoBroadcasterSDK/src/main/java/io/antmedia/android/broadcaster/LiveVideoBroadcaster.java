@@ -10,22 +10,30 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
+import android.hardware.display.DisplayManager;
+import android.hardware.display.VirtualDisplay;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
+import android.media.projection.MediaProjection;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.opengl.GLSurfaceView;
 import android.os.AsyncTask;
 import android.os.Binder;
+import android.os.Build;
 import android.os.HandlerThread;
 import android.os.IBinder;
 import android.os.Process;
-import android.support.annotation.Nullable;
-import android.support.design.widget.Snackbar;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
+import androidx.annotation.Nullable;
+import com.google.android.material.snackbar.Snackbar;
+
+import androidx.annotation.RequiresApi;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+
 import android.util.Log;
 import android.view.Surface;
+import android.view.SurfaceView;
 import android.view.View;
 
 import java.util.ArrayList;
@@ -79,6 +87,13 @@ public class LiveVideoBroadcaster extends Service implements ILiveVideoBroadcast
     private ConnectivityManager connectivityManager;
     private boolean adaptiveStreamingEnabled = false;
     private Timer adaptiveStreamingTimer = null;
+    private Timer connectionCheckerTimer;
+    private MediaProjection mediaProjection;
+    private int densityDpi;
+    private VirtualDisplay mVirtualDisplay;
+    private SurfaceView surfaceView;
+    private int widthPixels;
+    private int heightPixels;
 
     public boolean isConnected() {
         if (mRtmpStreamer != null) {
@@ -160,13 +175,16 @@ public class LiveVideoBroadcaster extends Service implements ILiveVideoBroadcast
         super.onDestroy();
     }
 
-    public void init(Activity activity, GLSurfaceView glView) {
+    @RequiresApi(api = Build.VERSION_CODES.N)
+    public void init(Activity activity, GLSurfaceView glView, SurfaceView surfaceView) {
         try {
             audioHandlerThread = new HandlerThread("AudioHandlerThread", Process.THREAD_PRIORITY_AUDIO);
             audioHandlerThread.start();
             audioHandler = new AudioHandler(audioHandlerThread.getLooper());
             mCameraHandler = new CameraHandler(this);
             this.context = activity;
+
+            this.surfaceView = surfaceView;
 
             // Define a handler that receives camera-control messages from other threads.  All calls
             // to Camera must be made on the same thread.  Note we create this before the renderer
@@ -175,13 +193,13 @@ public class LiveVideoBroadcaster extends Service implements ILiveVideoBroadcast
             mGLView = glView;
             mGLView.setRenderer(mRenderer);
             mGLView.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
-
             mRtmpHandlerThread = new HandlerThread("RtmpStreamerThread"); //, Process.THREAD_PRIORITY_BACKGROUND);
             mRtmpHandlerThread.start();
             mRtmpStreamer = new RTMPStreamer(mRtmpHandlerThread.getLooper());
 
             connectivityManager = (ConnectivityManager) this.getSystemService(
                     Context.CONNECTIVITY_SERVICE);
+
         }
         catch (Exception e) {
             e.printStackTrace();
@@ -196,14 +214,14 @@ public class LiveVideoBroadcaster extends Service implements ILiveVideoBroadcast
         return false;
     }
 
-    public boolean startBroadcasting(String rtmpUrl) {
+    public boolean startBroadcasting(final String rtmpUrl) {
 
         isRecording = false;
 
-        if (sCameraProxy == null || sCameraProxy.isReleased()) {
-            Log.w(TAG, "Camera should be opened before calling this function");
-            return false;
-        }
+      //  if (sCameraProxy == null || sCameraProxy.isReleased()) {
+      //      Log.w(TAG, "Camera should be opened before calling this function");
+      //      return false;
+      //  }
 
         if (!hasConnection()) {
             Log.w(TAG, "There is no active network connection");
@@ -216,11 +234,37 @@ public class LiveVideoBroadcaster extends Service implements ILiveVideoBroadcast
             return false;
         }
 
+        connectionCheckerTimer = new Timer();
+        connectionCheckerTimer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                if (hasConnection())
+                {
+                    if (!isConnected())
+                    {
+                        if (mRtmpStreamer.open(rtmpUrl))
+                        {
+                            Log.i(TAG, "RTMP is getting connected to " + rtmpUrl + " frame count in queue: " + mRtmpStreamer.getFrameCountInQueue());
+                        }
+                        else {
+                            Log.w(TAG, "RTMP cannot connect to the " + rtmpUrl + " frame count in queue: " + mRtmpStreamer.getFrameCountInQueue());
+                        }
+                    }
+                    else {
+                        Log.d(TAG, "RTMP is already connected to " + rtmpUrl + " frame count in queue: " + mRtmpStreamer.getFrameCountInQueue());
+                    }
+                }
+                else {
+                    Log.w(TAG, "There is no network connection. Frame count in queue: " + mRtmpStreamer.getFrameCountInQueue());
+                }
+            }
+        }, 0, 1000);
+
         try {
             //   rtmpURL = "rtmp://a.rtmp.youtube.com/live2/";
             //   streamURL = "raqk-ppy4-0p33-7phc";
-            boolean result = mRtmpStreamer.open(rtmpUrl);
-            if (result) {
+            //if (result)
+            {
                 final long recordStartTime = System.currentTimeMillis();
                 mGLView.queueEvent(new Runnable() {
                     @Override
@@ -345,6 +389,11 @@ public class LiveVideoBroadcaster extends Service implements ILiveVideoBroadcast
                 adaptiveStreamingTimer = null;
             }
 
+            if (connectionCheckerTimer != null) {
+                connectionCheckerTimer.cancel();
+                connectionCheckerTimer = null;
+            }
+
             if (audioThread != null) {
                 audioThread.stopAudioRecording();
             }
@@ -408,13 +457,51 @@ public class LiveVideoBroadcaster extends Service implements ILiveVideoBroadcast
 
     @Override
     public void handleSetSurfaceTexture(SurfaceTexture st) {
-        if (sCameraProxy != null && !context.isFinishing() && st != null) {
-            {
+        if (/*sCameraProxy != null && !context.isFinishing() &&*/ st != null)
+        {
+
+
+                Log.i(TAG, "surface gl view width: " + mGLView.getWidth() + " height:" +mGLView.getHeight());
                 st.setOnFrameAvailableListener(this);
+
+                /*
+                SurfaceView localSurface = mGLView;
+
+                Surface mSurface = localSurface.getHolder().getSurface();
+
+                Log.i(TAG, "Setting up a VirtualDisplay: " +
+                        localSurface.getWidth() + "x" + localSurface.getHeight() +
+                        " (" + densityDpi + ")");
+                mVirtualDisplay = mediaProjection.createVirtualDisplay("ScreenCapture",
+                        localSurface.getWidth(), localSurface.getHeight(), densityDpi,
+                        DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
+                        mSurface, new VirtualDisplay.Callback() {
+                            @Override
+                            public void onPaused() {
+                                super.onPaused();
+                                Log.i(TAG,"VirtualDisplay.Callback() onPaused" );
+                            }
+
+                            @Override
+                            public void onResumed() {
+                                super.onResumed();
+                                Log.i(TAG,"VirtualDisplay.Callback() onResumed" );
+                            }
+
+                            @Override
+                            public void onStopped() {
+                                super.onStopped();
+                                Log.i(TAG,"VirtualDisplay.Callback() onStopped" );
+                            }
+                        },  null);
+
+*/
+
                 sCameraProxy.stopPreview();
                 sCameraProxy.setPreviewTexture(st);
+
                 sCameraProxy.startPreview();
-            }
+
         }
     }
 
@@ -509,6 +596,24 @@ public class LiveVideoBroadcaster extends Service implements ILiveVideoBroadcast
         }.execute(currentCameraId);
     }
 
+
+    @Override
+    public void setMediaProjection(MediaProjection mediaProjection, int densityDpi, final int widthPixels, final int heightPixels) {
+        this.mediaProjection = mediaProjection;
+        this.densityDpi = densityDpi;
+        mGLView.setVisibility(View.VISIBLE);
+        mGLView.onResume();
+        this.widthPixels = widthPixels;
+        this.heightPixels = heightPixels;
+
+        mGLView.queueEvent(new Runnable() {
+            @Override
+            public void run() {
+                mRenderer.setCameraPreviewSize(widthPixels, heightPixels);
+            }
+        });
+    }
+
     private void releaseCamera() {
         try {
             if (sCameraProxy != null) {
@@ -545,7 +650,7 @@ public class LiveVideoBroadcaster extends Service implements ILiveVideoBroadcast
             }
         });
 
-        int preferredHeight = 720;
+        int preferredHeight = 480;
 
         choosenPreviewsSizeList = new ArrayList<>();
 

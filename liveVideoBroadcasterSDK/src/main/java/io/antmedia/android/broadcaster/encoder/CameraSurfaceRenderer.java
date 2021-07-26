@@ -171,6 +171,7 @@ public class CameraSurfaceRenderer implements GLSurfaceView.Renderer {
             mRecordingStatus = RECORDING_OFF;
         }
 
+
         // Set up the texture blitter that will be used for on-screen display.  This
         // is *not* applied to the recording, because that uses a separate shader.
         mFullScreen = new FullFrameRect(
@@ -211,7 +212,6 @@ public class CameraSurfaceRenderer implements GLSurfaceView.Renderer {
     public void onDrawFrame(GL10 unused) {
         if (VERBOSE) Log.d(TAG, "onDrawFrame tex=" + mTextureId);
         boolean showBox = false;
-
 
         // Latch the latest frame.  If there isn't anything new, we'll just re-use whatever
         // was there before.
