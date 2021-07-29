@@ -6,29 +6,6 @@
     android:id="@+id/root_layout">
 
 
-    <android.opengl.GLSurfaceView
-        android:id="@+id/cameraPreview_surfaceView"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:visibility="gone"
-        android:layout_gravity="center" />
-
-    <android.opengl.GLSurfaceView
-        android:id="@+id/screenPreview_surfaceView"
-        android:layout_gravity="bottom|right"
-        android:layout_height="100dp"
-        android:layout_width="100dp"
-        android:visibility="gone"
-        />
-
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:id="@+id/transparent_cover"
-        android:background="#77000000"/>
-
-
-
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -37,25 +14,6 @@
         android:orientation="horizontal"
         android:visibility="visible"
         android:layout_alignParentStart="true">
-        <ImageButton
-            android:id="@+id/settings_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:adjustViewBounds="true"
-            android:onClick="showSetResolutionDialog"
-            android:src="@drawable/ic_settings_white_24dp"
-            style="?borderlessButtonStyle"
-            />
-
-        <ImageButton
-            android:id="@+id/changeCameraButton"
-            style="?attr/borderlessButtonStyle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:adjustViewBounds="true"
-            android:onClick="changeCamera"
-            android:src="@drawable/ic_switch_camera_white_24dp"
-            />
 
         <androidx.legacy.widget.Space
             android:layout_width="0dp"
@@ -73,6 +31,13 @@
             android:visibility="gone"/>
 
     </LinearLayout>
+
+    <VideoView
+        android:id="@+id/videoview"
+        android:layout_width="match_parent"
+        android:layout_height="360dp"
+        android:layout_margin="8dp"
+       />
 
 
     <LinearLayout

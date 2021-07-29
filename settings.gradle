@@ -1,1 +1,2 @@
+include ':rtmp-client'
 include ':app', ':liveVideoBroadcasterSDK'

@@ -55,15 +55,5 @@ public class Utils {
     }
 
 
-    public static int doesEncoderWorks(Context context) {
-        return getDefaultSharedPreferences(context).getInt(DOES_ENCODER_WORKS, ENCODER_NOT_TESTED);
-    }
-
-    public static void setEncoderWorks(Context context, boolean works) {
-        SharedPreferences sharedPreferences = getDefaultSharedPreferences(context);
-        SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.putInt(DOES_ENCODER_WORKS, works ? ENCODER_WORKS : ENCODER_NOT_WORKS);
-        editor.apply();
-    }
 
 }

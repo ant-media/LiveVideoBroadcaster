@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class RTMPStreamer extends Handler implements IMediaMuxer  {
 
 
-    private static final boolean DEBUG = false;
+    private static final boolean DEBUG = true;
     private static final String TAG = RTMPStreamer.class.getSimpleName();
     RTMPMuxer rtmpMuxer = new RTMPMuxer();
 
@@ -139,7 +139,7 @@ public class RTMPStreamer extends Handler implements IMediaMuxer  {
                     // add packet if the new frame timestamp is bigger than the last frame
                     // otherwise discard the packet. If we don't discard it, rtmp connection totally drops
                     mLastReceivedAudioFrameTimeStamp = msg.arg2;
-                    Log.w(TAG, "incoming audio frame timestamp: " + mLastReceivedAudioFrameTimeStamp );
+                    Log.w(TAG, "incoming audio frame timestamp: " + mLastReceivedAudioFrameTimeStamp + "length:" + msg.arg1);
                     audioFrameList.add(new Frame((byte[]) msg.obj, msg.arg1, msg.arg2));
                 }
                 else {
@@ -161,13 +161,14 @@ public class RTMPStreamer extends Handler implements IMediaMuxer  {
                     // add packet if the new frame timestamp is bigger than the last frame
                     // otherwise discard the packet. If we don't discard it, rtmp connection totally drops
                     mLastReceivedVideoFrameTimeStamp = msg.arg2;
-                    Log.w(TAG, "incoming video frame timestamp: " + mLastReceivedVideoFrameTimeStamp );
+                    Log.w(TAG, "incoming video frame timestamp: " + mLastReceivedVideoFrameTimeStamp + " length:" + msg.arg1);
                     videoFrameList.add(new Frame((byte[]) msg.obj, msg.arg1, msg.arg2));
                 }
                 else {
                     Log.w(TAG, "discarding videp packet because time stamp("+msg.arg2+") is older than last packet("+mLastReceivedVideoFrameTimeStamp+") or data lenth("+msg.arg1+") equal to zero");
                 }
                 sendFrames();
+
             }
             break;
             case STOP_STREAMING:
@@ -206,7 +207,6 @@ public class RTMPStreamer extends Handler implements IMediaMuxer  {
             //send all audio frames remained in the list
             sendAudioFrames(audioFrameList.get(audioFrameListSize - 1).timestamp);
         }
-
     }
 
     private void sendFrames() {
@@ -269,7 +269,7 @@ public class RTMPStreamer extends Handler implements IMediaMuxer  {
                 //if timestamp is bigger than the auio frame timestamp
                 //it will be sent later so break the loop
                 if (DEBUG) {
-                    Log.d(TAG, "Timestamp is bigger than the audio frame timestamp, it will be sent later so break the loop");
+                    Log.d(TAG, "Last sent timestamp: " + lastSentFrameTimeStamp + " is bigger than the audio frame timestamp: "+ audioFrame.timestamp +", it will be sent later so break the loop");
                 }
                 break;
             }
@@ -289,6 +289,7 @@ public class RTMPStreamer extends Handler implements IMediaMuxer  {
                         frame.timestamp++;
                     }
                     if (isConnected) {
+
                         int result = rtmpMuxer.writeVideo(frame.data, 0, frame.length, frame.timestamp);
                         if (DEBUG) {
                             Log.d(TAG, "send video result: " + result + " time:" + frame.timestamp + " length:" + frame.length);
@@ -310,15 +311,13 @@ public class RTMPStreamer extends Handler implements IMediaMuxer  {
                             Log.w(TAG, "Cannot write video because it's not connected");
                         }
                     }
-
-
                 }
             }
             else {
                 //if frame timestamp is not smaller than the timestamp
                 // break the loop, it will be sent later
                 if (DEBUG) {
-                    Log.d(TAG, "timestamp is bigger than the video frame timestamp, it will be sent later so break the loop");
+                    Log.d(TAG, "Last sent timestamp: " + lastSentFrameTimeStamp + "  is bigger than the video frame timestamp: " + frame.timestamp +", it will be sent later so break the loop");
                 }
                 break;
             }

@@ -1,7 +1,11 @@
 package io.antmedia.android.broadcaster;
 
+import android.media.AudioAttributes;
 import android.media.AudioFormat;
+import android.media.AudioPlaybackCaptureConfiguration;
+import android.media.AudioRecord;
 import android.media.MediaRecorder;
+import android.media.projection.MediaProjection;
 import android.os.Message;
 import android.util.Log;
 
@@ -16,15 +20,17 @@ class AudioRecorderThread extends Thread {
     private static final String TAG = AudioRecorderThread.class.getSimpleName();
     private final int mSampleRate;
     private final long startTime;
+    private final MediaProjection mediaProjection;
     private volatile boolean stopThread = false;
 
     private android.media.AudioRecord audioRecord;
     private AudioHandler audioHandler;
 
-    public AudioRecorderThread(int sampleRate, long recordStartTime, AudioHandler audioHandler) {
+    public AudioRecorderThread(int sampleRate, long recordStartTime, AudioHandler audioHandler, MediaProjection mediaProjection) {
         this.mSampleRate = sampleRate;
         this.startTime = recordStartTime;
         this.audioHandler = audioHandler;
+        this.mediaProjection = mediaProjection;
     }
 
 
@@ -39,9 +45,30 @@ class AudioRecorderThread extends Thread {
         byte[][] audioData;
         int bufferReadResult;
 
-        audioRecord = new android.media.AudioRecord(MediaRecorder.AudioSource.MIC,
-                mSampleRate, AudioFormat.CHANNEL_IN_MONO,
-                AudioFormat.ENCODING_PCM_16BIT, bufferSize);
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q)
+        {
+            AudioPlaybackCaptureConfiguration audioPlaybackCaptureConfiguration =
+                    new AudioPlaybackCaptureConfiguration
+                            .Builder(mediaProjection)
+                            .addMatchingUsage(AudioAttributes.USAGE_MEDIA)
+                            .addMatchingUsage(AudioAttributes.USAGE_GAME)
+                            .build();
+            audioRecord = new AudioRecord.Builder()
+                    .setAudioPlaybackCaptureConfig(audioPlaybackCaptureConfiguration)
+                    .setAudioFormat(new AudioFormat.Builder()
+                        .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+                        .setSampleRate(mSampleRate)
+                        .setChannelMask(AudioFormat.CHANNEL_IN_MONO)
+                        .build())
+                    .setBufferSizeInBytes(bufferSize)
+                    .build();
+
+        }
+        else {
+            audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC,
+                    mSampleRate, AudioFormat.CHANNEL_IN_MONO,
+                    AudioFormat.ENCODING_PCM_16BIT, bufferSize);
+        }
 
         // divide byte buffersize to 2 to make it short buffer
         audioData = new byte[1000][bufferSize];

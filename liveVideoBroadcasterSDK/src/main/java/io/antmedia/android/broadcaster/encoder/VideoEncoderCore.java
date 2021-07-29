@@ -19,8 +19,11 @@ package io.antmedia.android.broadcaster.encoder;
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
 import android.media.MediaFormat;
+import android.os.Environment;
 import android.util.Log;
 import android.view.Surface;
+
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
@@ -46,7 +49,7 @@ public class VideoEncoderCore {
     // TODO: these ought to be configurable as well
     private static final String MIME_TYPE = "video/avc";    // H.264 Advanced Video Coding
     //private int frameRate = 20;               // 20fps
-    private static final int IFRAME_INTERVAL = 2;           // 2 seconds between I-frames
+    private static final int IFRAME_INTERVAL = 1;           // 1 seconds between I-frames
     private IMediaMuxer mWriterHandler;
 
     private Surface mInputSurface;
@@ -54,6 +57,7 @@ public class VideoEncoderCore {
     private MediaCodec.BufferInfo mBufferInfo;
     private boolean mMuxerStarted;
     private Map<Integer, Object> reservedBuffers = new HashMap<Integer, Object>();
+    private int initialPresentationTime = -1;
 
 
     /**
@@ -74,12 +78,15 @@ public class VideoEncoderCore {
         format.setInteger(MediaFormat.KEY_BIT_RATE, bitRate);
         format.setInteger(MediaFormat.KEY_FRAME_RATE, frameRate);
         format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, IFRAME_INTERVAL);
+        format.setInteger(MediaFormat.KEY_CAPTURE_RATE, frameRate);
+        format.setInteger(MediaFormat.KEY_REPEAT_PREVIOUS_FRAME_AFTER, 1000000 / frameRate);
 
         if (VERBOSE) Log.d(TAG, "format: " + format);
 
         // Create a MediaCodec encoder, and configure it with our format.  Get a Surface
         // we can use for input and wrap it with a class that handles the EGL work.
         mEncoder = MediaCodec.createEncoderByType(MIME_TYPE);
+
         mEncoder.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
         mInputSurface = mEncoder.createInputSurface();
         mEncoder.start();
@@ -88,41 +95,6 @@ public class VideoEncoderCore {
 
     }
 
-
-    public static boolean doesEncoderWork(int width, int height, int bitRate, int frameRate) {
-
-        boolean success = false;
-        MediaFormat format = MediaFormat.createVideoFormat(MIME_TYPE, width, height);
-
-        // Set some properties.  Failing to specify some of these can cause the MediaCodec
-        // configure() call to throw an unhelpful exception.
-        format.setInteger(MediaFormat.KEY_COLOR_FORMAT,
-                MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);
-        format.setInteger(MediaFormat.KEY_BIT_RATE, bitRate);
-        format.setInteger(MediaFormat.KEY_FRAME_RATE, frameRate);
-        format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, IFRAME_INTERVAL);
-        if (VERBOSE) Log.d(TAG, "format: " + format);
-
-        // Create a MediaCodec encoder, and configure it with our format.  Get a Surface
-        // we can use for input and wrap it with a class that handles the EGL work.
-        MediaCodec mEncoder = null;
-        try {
-            mEncoder = MediaCodec.createEncoderByType(MIME_TYPE);
-            mEncoder.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
-            Surface mInputSurface = mEncoder.createInputSurface();
-            success = true;
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        catch (IllegalStateException e) {
-            e.printStackTrace();
-        }
-        finally {
-            mEncoder.release();
-        }
-
-        return success;
-    }
 
     /**
      * Returns the encoder's input surface.
@@ -230,6 +202,11 @@ public class VideoEncoderCore {
                     // Othe wise after about 35 minutes(exceeds integer max size) presentationTime will be negative
                     //in this assignment int presetationTime = (int)mBufferInfo.presentationTimeUs/1000;
                     int presetationTime = (int)presentationTimeInMillis;
+                    if (initialPresentationTime == -1) {
+                        initialPresentationTime = presetationTime;
+                    }
+
+                    presetationTime = presetationTime - initialPresentationTime + 1;
                     byte[] data = getBuffer(mBufferInfo.size, mWriterHandler.getLastVideoFrameTimeStamp(), presetationTime);
                     encodedData.get(data, 0, mBufferInfo.size);
                     encodedData.position(mBufferInfo.offset);

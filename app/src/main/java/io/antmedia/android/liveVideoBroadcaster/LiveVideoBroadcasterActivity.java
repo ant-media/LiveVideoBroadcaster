@@ -1,63 +1,47 @@
 package io.antmedia.android.liveVideoBroadcaster;
 
-import android.Manifest;
 import android.app.Activity;
-import android.app.AlertDialog;
-import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.pm.ServiceInfo;
 import android.content.res.Configuration;
-import android.hardware.Camera;
-import android.hardware.display.DisplayManager;
-import android.hardware.display.VirtualDisplay;
 import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
 import android.net.Uri;
-import android.opengl.GLSurfaceView;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
-import com.google.android.material.snackbar.Snackbar;
-
-import androidx.annotation.RequiresApi;
-import androidx.core.app.ActivityCompat;
-import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentTransaction;
-import androidx.core.widget.ContentLoadingProgressBar;
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.util.DisplayMetrics;
 import android.util.Log;
-import android.view.Surface;
-import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.VideoView;
 
-import java.util.ArrayList;
+import androidx.annotation.RequiresApi;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.widget.ContentLoadingProgressBar;
+
+import com.google.android.material.snackbar.Snackbar;
+
 import java.util.Timer;
 import java.util.TimerTask;
 
 import io.antmedia.android.broadcaster.ILiveVideoBroadcaster;
 import io.antmedia.android.broadcaster.LiveVideoBroadcaster;
-import io.antmedia.android.broadcaster.utils.Resolution;
-
-import static io.antmedia.android.MainActivity.RTMP_BASE_URL;
 
 public class LiveVideoBroadcasterActivity extends AppCompatActivity {
 
 
+    public static final String RTMP_BASE_URL = "rtmp://ovh36.antmedia.io/LiveApp/";
     private static final String TAG = LiveVideoBroadcasterActivity.class.getSimpleName();
     private ViewGroup mRootView;
     boolean mIsRecording = false;
@@ -65,46 +49,34 @@ public class LiveVideoBroadcasterActivity extends AppCompatActivity {
     private Timer mTimer;
     private long mElapsedTime;
     public TimerHandler mTimerHandler;
-    private ImageButton mSettingsButton;
-    private CameraResolutionsFragment mCameraResolutionsDialog;
     private Intent mLiveVideoBroadcasterServiceIntent;
     private TextView mStreamLiveStatus;
-    private GLSurfaceView mGLView;
     private ILiveVideoBroadcaster mLiveVideoBroadcaster;
     private Button mBroadcastControlButton;
     private MediaProjectionManager mMediaProjectionManager;
 
     private static final int REQUEST_MEDIA_PROJECTION = 1;
-    private int mResultCode;
-    private Intent mResultData;
     private MediaProjection mMediaProjection;
-    private VirtualDisplay mVirtualDisplay;
-    private Surface mSurface;
 
     /** Defines callbacks for service binding, passed to bindService() */
     private ServiceConnection mConnection = new ServiceConnection() {
 
-        @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
         @Override
         public void onServiceConnected(ComponentName className,
                                        IBinder service) {
             // We've bound to LocalService, cast the IBinder and get LocalService instance
             LiveVideoBroadcaster.LocalBinder binder = (LiveVideoBroadcaster.LocalBinder) service;
+
             if (mLiveVideoBroadcaster == null) {
                 mLiveVideoBroadcaster = binder.getService();
-                mLiveVideoBroadcaster.init(LiveVideoBroadcasterActivity.this, mGLView, null);
-                mLiveVideoBroadcaster.setAdaptiveStreaming(false);
             }
-            mLiveVideoBroadcaster.openCamera(Camera.CameraInfo.CAMERA_FACING_FRONT);
 
-            /*
             mMediaProjectionManager = (MediaProjectionManager)
                     getSystemService(Context.MEDIA_PROJECTION_SERVICE);
 
             startActivityForResult(
                     mMediaProjectionManager.createScreenCaptureIntent(),
                     REQUEST_MEDIA_PROJECTION);
-            */
 
         }
         @Override
@@ -114,20 +86,17 @@ public class LiveVideoBroadcasterActivity extends AppCompatActivity {
     };
 
 
-
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Hide title
-        //requestWindowFeature(Window.FEATURE_NO_TITLE);
-     //   getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-     //   getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
         //binding on resume not to having leaked service connection
         mLiveVideoBroadcasterServiceIntent = new Intent(this, LiveVideoBroadcaster.class);
         //this makes service do its job until done
+
         startService(mLiveVideoBroadcasterServiceIntent);
+
 
         setContentView(R.layout.activity_live_video_broadcaster);
 
@@ -135,25 +104,20 @@ public class LiveVideoBroadcasterActivity extends AppCompatActivity {
         mStreamNameEditText = (EditText) findViewById(R.id.stream_name_edit_text);
 
         mRootView = (ViewGroup)findViewById(R.id.root_layout);
-        mSettingsButton = (ImageButton)findViewById(R.id.settings_button);
         mStreamLiveStatus = (TextView) findViewById(R.id.stream_live_status);
 
         mBroadcastControlButton = (Button) findViewById(R.id.toggle_broadcasting);
 
-        // Configure the GLSurfaceView.  This will start the Renderer thread, with an
-        // appropriate EGL activity.
-        mGLView = (GLSurfaceView) findViewById(R.id.cameraPreview_surfaceView);
-        if (mGLView != null) {
-            mGLView.setEGLContextClientVersion(2);     // select GLES 2.0
-        }
+        VideoView mVideoView = findViewById(R.id.videoview);
+
+        String mediaName = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
+        Uri videoUri = Uri.parse(mediaName);
+
+        mVideoView.setVideoURI(videoUri);
+        mVideoView.start();
 
     }
 
-    public void changeCamera(View v) {
-        if (mLiveVideoBroadcaster != null) {
-            mLiveVideoBroadcaster.changeCamera();
-        }
-    }
 
     @Override
     protected void onStart() {
@@ -163,62 +127,15 @@ public class LiveVideoBroadcasterActivity extends AppCompatActivity {
 
     }
 
-    @Override
-    public void onRequestPermissionsResult(int requestCode,
-                                           String permissions[], int[] grantResults) {
-        switch (requestCode) {
-            case LiveVideoBroadcaster.PERMISSIONS_REQUEST: {
-                if (mLiveVideoBroadcaster.isPermissionGranted()) {
-                    mLiveVideoBroadcaster.openCamera(Camera.CameraInfo.CAMERA_FACING_BACK);
-                }
-                else {
-                    if (ActivityCompat.shouldShowRequestPermissionRationale(this,
-                            Manifest.permission.CAMERA) ||
-                            ActivityCompat.shouldShowRequestPermissionRationale(this,
-                                    Manifest.permission.RECORD_AUDIO) ) {
-                        mLiveVideoBroadcaster.requestPermission();
-                    }
-                    else {
-                        new AlertDialog.Builder(LiveVideoBroadcasterActivity.this)
-                                .setTitle(R.string.permission)
-                                .setMessage(getString(R.string.app_doesnot_work_without_permissions))
-                                .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
-                                    public void onClick(DialogInterface dialog, int which) {
-
-                                        try {
-                                            //Open the specific App Info page:
-                                            Intent intent = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
-                                            intent.setData(Uri.parse("package:" + getApplicationContext().getPackageName()));
-                                            startActivity(intent);
-
-                                        } catch ( ActivityNotFoundException e ) {
-                                            //e.printStackTrace();
-
-                                            //Open the generic Apps page:
-                                            Intent intent = new Intent(android.provider.Settings.ACTION_MANAGE_APPLICATIONS_SETTINGS);
-                                            startActivity(intent);
-
-                                        }
-                                    }
-                                })
-                                .show();
-                    }
-                }
-                return;
-            }
-        }
-    }
 
     @Override
     protected void onPause() {
         super.onPause();
         Log.i(TAG, "onPause");
 
-        //hide dialog if visible not to create leaked window exception
-        if (mCameraResolutionsDialog != null && mCameraResolutionsDialog.isVisible()) {
-            mCameraResolutionsDialog.dismiss();
+        if (mMediaProjection != null) {
+            mMediaProjection.stop();
         }
-        mLiveVideoBroadcaster.pause();
     }
 
 
@@ -231,10 +148,6 @@ public class LiveVideoBroadcasterActivity extends AppCompatActivity {
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
-
-        //if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE || newConfig.orientation == Configuration.ORIENTATION_PORTRAIT) {
-        //    mLiveVideoBroadcaster.setDisplayOrientation();
-        //}
     }
 
     @Override
@@ -247,47 +160,15 @@ public class LiveVideoBroadcasterActivity extends AppCompatActivity {
             }
 
             Log.i(TAG, "Starting screen capture");
-            mResultCode = resultCode;
-            mResultData = data;
-            setUpMediaProjection();
-            setUpVirtualDisplay();
+
+            DisplayMetrics metrics = new DisplayMetrics();
+            getWindowManager().getDefaultDisplay().getMetrics(metrics);
+
+            mLiveVideoBroadcaster.setMediaProjection(mMediaProjectionManager, data, resultCode, metrics.densityDpi, metrics.widthPixels, metrics.heightPixels);
+
+
+            mLiveVideoBroadcaster.init(this, 2000000, 25);
         }
-    }
-
-    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
-    private void setUpMediaProjection() {
-        mMediaProjection = mMediaProjectionManager.getMediaProjection(mResultCode, mResultData);
-    }
-    private void setUpVirtualDisplay() {
-        DisplayMetrics metrics = new DisplayMetrics();
-        getWindowManager().getDefaultDisplay().getMetrics(metrics);
-
-        mLiveVideoBroadcaster.setMediaProjection(mMediaProjection, metrics.densityDpi, metrics.widthPixels, metrics.heightPixels);
-
-    }
-
-    public void showSetResolutionDialog(View v) {
-
-        FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
-        Fragment fragmentDialog = getSupportFragmentManager().findFragmentByTag("dialog");
-        if (fragmentDialog != null) {
-
-            ft.remove(fragmentDialog);
-        }
-
-        ArrayList<Resolution> sizeList = mLiveVideoBroadcaster.getPreviewSizeList();
-
-
-        if (sizeList != null && sizeList.size() > 0) {
-            mCameraResolutionsDialog = new CameraResolutionsFragment();
-
-            mCameraResolutionsDialog.setCameraResolutions(sizeList, mLiveVideoBroadcaster.getPreviewSize());
-            mCameraResolutionsDialog.show(ft, "resolutiton_dialog");
-        }
-        else {
-            Snackbar.make(mRootView, "No resolution available",Snackbar.LENGTH_LONG).show();
-        }
-
     }
 
     public void toggleBroadcasting(View v) {
@@ -320,7 +201,6 @@ public class LiveVideoBroadcasterActivity extends AppCompatActivity {
                                 mStreamLiveStatus.setVisibility(View.VISIBLE);
 
                                 mBroadcastControlButton.setText(R.string.stop_broadcasting);
-                                mSettingsButton.setVisibility(View.GONE);
                                 startTimer();//start the recording duration
                             }
                             else {
@@ -353,7 +233,6 @@ public class LiveVideoBroadcasterActivity extends AppCompatActivity {
 
             mStreamLiveStatus.setVisibility(View.GONE);
             mStreamLiveStatus.setText(R.string.live_indicator);
-            mSettingsButton.setVisibility(View.VISIBLE);
 
             stopTimer();
             mLiveVideoBroadcaster.stopBroadcasting();
@@ -391,10 +270,6 @@ public class LiveVideoBroadcasterActivity extends AppCompatActivity {
         }
         this.mTimer = null;
         this.mElapsedTime = 0;
-    }
-
-    public void setResolution(Resolution size) {
-        mLiveVideoBroadcaster.setResolution(size);
     }
 
     private class TimerHandler extends Handler {

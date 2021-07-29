@@ -6,7 +6,7 @@ android {
     defaultConfig {
         applicationId "io.antmedia.android.livevideopublisher"
         minSdkVersion 21
-        targetSdkVersion 29
+        targetSdkVersion 28
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
@@ -26,8 +26,7 @@ dependencies {
     })
     implementation 'androidx.appcompat:appcompat:1.0.0'
 
-    implementation 'com.google.android.exoplayer:exoplayer:r2.3.1'
-
     implementation project(path: ':liveVideoBroadcasterSDK')
+    implementation project(path: ':rtmp-client')
     testImplementation('junit:junit:4.12')
 }

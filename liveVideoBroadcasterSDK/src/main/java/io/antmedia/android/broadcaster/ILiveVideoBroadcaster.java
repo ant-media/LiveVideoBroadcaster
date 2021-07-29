@@ -1,13 +1,8 @@
 package io.antmedia.android.broadcaster;
 
 import android.app.Activity;
-import android.media.projection.MediaProjection;
-import android.opengl.GLSurfaceView;
-import android.view.SurfaceView;
-
-import java.util.ArrayList;
-
-import io.antmedia.android.broadcaster.utils.Resolution;
+import android.content.Intent;
+import android.media.projection.MediaProjectionManager;
 
 /**
  * Created by mekya on 29/03/2017.
@@ -15,15 +10,8 @@ import io.antmedia.android.broadcaster.utils.Resolution;
 
 public interface ILiveVideoBroadcaster {
 
-    /**
-     * Initializes video broadcaster
-     * @param mGLView
-     * the GLSurfaceView which is used to render camera view
-     * @param activity
- * the activity which is using this service
-     * @param surfaceView
-     */
-    void init(Activity activity, GLSurfaceView gLView, SurfaceView surfaceView);
+
+    void init(Activity activity, int bitrate, int framerate);
 
     /**
      * Checks whether camera and microphone permissions are granted
@@ -38,57 +26,6 @@ public interface ILiveVideoBroadcaster {
      */
     void requestPermission();
 
-    /**
-     * Opens camera in an another thread and render camera view on GLSurfaceView
-     * @param cameraId specifies which camera to open
-     *                 can be
-     *                 Camera.CameraInfo.CAMERA_FACING_BACK, Camera.CameraInfo.CAMERA_FACING_FRONT;
-     *
-     */
-    void openCamera(int cameraId);
-
-    /**
-     * Changes the camera,
-     * if active camera is back camera, releases the back camera and
-     * open the front camera, it behaves same with the front camera
-     */
-    void changeCamera();
-
-
-    /**
-     * Set adaptive streaming enable or disable
-     *
-     * @param enable, if true , adaptive streaming is enabled, defaults false
-     */
-    void setAdaptiveStreaming(boolean enable);
-
-    /**
-     * Set the resolution of the active camera
-     * @param size
-     */
-    void setResolution(Resolution size);
-
-
-    /**
-     * @return the supported preview sizes of the active camera
-     */
-    ArrayList<Resolution> getPreviewSizeList();
-
-    /**
-     *
-     * @return current preview size of the active camera
-     */
-    Resolution getPreviewSize();
-
-    /**
-     * Sets the display orientation of the camera for portrait or landscape orientation
-     */
-    void setDisplayOrientation();
-
-    /**
-     * Pauses and releases the camera, it is safe to call this function in OnPause of the activity
-     */
-    void pause();
 
     /**
      *
@@ -110,5 +47,5 @@ public interface ILiveVideoBroadcaster {
      */
     void stopBroadcasting();
 
-    void setMediaProjection(MediaProjection mMediaProjection, int densityDpi, int widthPixels, int heightPixels);
+    void setMediaProjection(MediaProjectionManager mMediaProjectionManager, Intent data, int resultCode, int densityDpi, int widthPixels, int heightPixels);
 }
