@@ -124,7 +124,6 @@ public class LiveVideoBroadcasterActivity extends AppCompatActivity {
         super.onStart();
         //this lets activity bind
         bindService(mLiveVideoBroadcasterServiceIntent, mConnection, 0);
-
     }
 
 
@@ -163,8 +162,8 @@ public class LiveVideoBroadcasterActivity extends AppCompatActivity {
 
             DisplayMetrics metrics = new DisplayMetrics();
             getWindowManager().getDefaultDisplay().getMetrics(metrics);
-
-            mLiveVideoBroadcaster.setMediaProjection(mMediaProjectionManager, data, resultCode, metrics.densityDpi, metrics.widthPixels, metrics.heightPixels);
+            mMediaProjection = mMediaProjectionManager.getMediaProjection(resultCode, data);
+            mLiveVideoBroadcaster.setMediaProjection(mMediaProjection, metrics.densityDpi, metrics.widthPixels, metrics.heightPixels);
 
 
             mLiveVideoBroadcaster.init(this, 2000000, 25);

@@ -2,6 +2,7 @@ package io.antmedia.android.broadcaster;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
 
 /**
@@ -14,17 +15,11 @@ public interface ILiveVideoBroadcaster {
     void init(Activity activity, int bitrate, int framerate);
 
     /**
-     * Checks whether camera and microphone permissions are granted
+     * Checks microphone permissions are granted
      * @return true if permissions are granted
      * false if permissions are not granted
      */
     boolean isPermissionGranted();
-
-    /**
-     * Request for missiong permissions
-     * Camera and microphone permissions are required
-     */
-    void requestPermission();
 
 
     /**
@@ -47,5 +42,5 @@ public interface ILiveVideoBroadcaster {
      */
     void stopBroadcasting();
 
-    void setMediaProjection(MediaProjectionManager mMediaProjectionManager, Intent data, int resultCode, int densityDpi, int widthPixels, int heightPixels);
+    void setMediaProjection(MediaProjection mediaProjection, int densityDpi, int widthPixels, int heightPixels);
 }

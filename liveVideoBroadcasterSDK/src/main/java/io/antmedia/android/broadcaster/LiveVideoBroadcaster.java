@@ -229,8 +229,8 @@ public class LiveVideoBroadcaster extends Service implements ILiveVideoBroadcast
 
 
     @Override
-    public void setMediaProjection(MediaProjectionManager mediaProjectionManager, Intent data, int resultCode, int densityDpi, final int widthPixels, final int heightPixels) {
-        this.mediaProjection = mediaProjectionManager.getMediaProjection(resultCode, data);
+    public void setMediaProjection(MediaProjection mediaProjection, int densityDpi, final int widthPixels, final int heightPixels) {
+        this.mediaProjection = mediaProjection;
         this.densityDpi = densityDpi;
         this.widthPixels = widthPixels;
         this.heightPixels = heightPixels;
